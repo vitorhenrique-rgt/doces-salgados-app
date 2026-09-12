@@ -4,38 +4,37 @@
    ========================================================================== */
 :root {
   /* Base */
-  --color-background: #fbf1ea; /* fundo geral, blush claro — não branco puro */
-  --color-surface: #ffffff; /* cards, formulários, tabelas */
-  --color-surface-alt: #f6e4d8; /* blocos de destaque suave, hover de linha de tabela */
+  --color-background: #FBF1EA;      /* fundo geral, blush claro — não branco puro */
+  --color-surface: #FFFFFF;         /* cards, formulários, tabelas */
+  --color-surface-alt: #F6E4D8;     /* blocos de destaque suave, hover de linha de tabela */
 
   /* Texto */
-  --color-text: #3b2a22; /* marrom-chocolate escuro, títulos e texto principal */
-  --color-text-muted: #7a6459; /* texto secundário, labels, legendas */
+  --color-text: #3B2A22;            /* marrom-chocolate escuro, títulos e texto principal */
+  --color-text-muted: #7A6459;      /* texto secundário, labels, legendas */
 
   /* Marca / ação primária */
-  --color-primary: #a6334f; /* vinho/berry — botões primários, links, destaques */
-  --color-primary-hover: #8a2a41; /* hover/active do primário */
-  --color-primary-soft: #f3d9df; /* fundo suave para badges/alertas na cor primária */
+  --color-primary: #A6334F;         /* vinho/berry — botões primários, links, destaques */
+  --color-primary-hover: #8A2A41;   /* hover/active do primário */
+  --color-primary-soft: #F3D9DF;    /* fundo suave para badges/alertas na cor primária */
 
   /* Acento secundário */
-  --color-gold: #b8912f; /* dourado — usar com moderação */
+  --color-gold: #B8912F;            /* dourado — usar com moderação */
 
   /* Status (usaremos mais pra frente, na tela de vendas/fiado) */
-  --color-success: #4c7a50;
-  --color-success-soft: #e1ede1;
-  --color-warning: #b9852f;
-  --color-warning-soft: #f5e6cc;
-  --color-danger: #9b3a3a;
-  --color-danger-soft: #f3dcdc;
+  --color-success: #4C7A50;
+  --color-success-soft: #E1EDE1;
+  --color-warning: #B9852F;
+  --color-warning-soft: #F5E6CC;
+  --color-danger: #9B3A3A;
+  --color-danger-soft: #F3DCDC;
 
   /* Bordas e sombra */
-  --color-border: #e8d5c8;
+  --color-border: #E8D5C8;
   --shadow-soft: 0 2px 10px rgba(59, 42, 34, 0.08);
 
   /* Tipografia */
-  --font-display: "Fraunces", Georgia, serif; /* títulos */
-  --font-ui:
-    "Inter", -apple-system, sans-serif; /* texto de interface e dados */
+  --font-display: 'Fraunces', Georgia, serif; /* títulos */
+  --font-ui: 'Inter', -apple-system, sans-serif; /* texto de interface e dados */
 
   --text-xs: 0.75rem;
   --text-sm: 0.875rem;
@@ -99,7 +98,9 @@ label {
 }
 
 input[type="text"],
-input[type="number"] {
+input[type="number"],
+input[type="date"],
+select {
   width: 100%;
   padding: 0.65rem 0.75rem;
   border: 1px solid var(--color-border);
@@ -111,7 +112,9 @@ input[type="number"] {
 
 /* Acessibilidade: nunca remover o foco visível sem substituir por outro indicador */
 input[type="text"]:focus,
-input[type="number"]:focus {
+input[type="number"]:focus,
+input[type="date"]:focus,
+select:focus {
   outline: 2px solid var(--color-primary);
   outline-offset: 1px;
 }
@@ -134,7 +137,7 @@ button {
    de "um único destaque de cor por tela" da skill de estilo visual */
 button[type="submit"] {
   background: var(--color-primary);
-  color: #ffffff;
+  color: #FFFFFF;
   border: none;
   align-self: flex-start;
 }
@@ -251,7 +254,7 @@ td .rowActionButton.danger:hover {
    mas um pouco menor, para caber bem na linha da tabela */
 .restockForm .confirmRestockButton {
   background: var(--color-primary);
-  color: #ffffff;
+  color: #FFFFFF;
   border: none;
   padding: 0.4rem 0.9rem;
   font: 600 var(--text-sm) var(--font-ui);
@@ -286,6 +289,149 @@ td .rowActionButton.danger:hover {
   font-style: normal;
   text-align: center;
   padding: 1rem 0;
+}
+
+/* ==========================================================================
+   Tela de Vendas
+   ========================================================================== */
+
+/* ---- Busca de produtos (autocomplete simples) ---- */
+
+/* "position: relative" aqui é o que permite a lista de sugestões (que é
+   "position: absolute") se posicionar logo abaixo do campo de busca,
+   em vez de "flutuar" em qualquer lugar da página. */
+.productSearchWrapper {
+  position: relative;
+}
+
+.productSearchResults {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 10;
+  margin: 0;
+  padding: 0.4rem;
+  list-style: none;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  box-shadow: var(--shadow-soft);
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.productSearchResults li {
+  padding: 0.75rem 0.6rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font: 400 var(--text-base) var(--font-ui);
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.productSearchResults li:hover,
+.productSearchResults li:active {
+  background: var(--color-surface-alt);
+}
+
+.productSearchResults .resultProductName {
+  color: var(--color-text);
+}
+
+.productSearchResults .resultProductPrice {
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.productSearchResults .noResultsItem {
+  color: var(--color-text-muted);
+  cursor: default;
+}
+
+.productSearchResults .noResultsItem:hover {
+  background: transparent;
+}
+
+/* ---- Lista de itens adicionados à venda ---- */
+
+.saleItemsWrapper {
+  margin-top: 0.25rem;
+}
+
+/* Controle de quantidade com botões +/- — pensado para toque no celular,
+   já que essa tela provavelmente será usada mais no meio de uma venda,
+   com o cliente esperando. Botões grandes o bastante pro polegar. */
+.qtyStepper {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.qtyStepper button {
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: 1.5px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-primary);
+  font: 600 var(--text-lg) var(--font-ui);
+  line-height: 1;
+  border-radius: 8px;
+}
+
+.qtyStepper button:hover {
+  background: var(--color-primary-soft);
+}
+
+.qtyStepper .qtyValue {
+  min-width: 1.5rem;
+  text-align: center;
+  font: 600 var(--text-base) var(--font-ui);
+}
+
+/* Botão de remover item da venda — reaproveita o padrão de ação perigosa */
+.removeItemButton {
+  background: transparent;
+  border: none;
+  color: var(--color-danger);
+  font: 500 var(--text-sm) var(--font-ui);
+  padding: 0.3rem 0.5rem;
+  border-radius: 6px;
+}
+
+.removeItemButton:hover {
+  background: var(--color-danger-soft);
+}
+
+/* ---- Total da venda: é o número mais importante da tela, por isso
+   usa a fonte de destaque (Fraunces) e um divisor dourado fino acima,
+   conforme a regra de "divisores dourados com moderação" ---- */
+.saleTotalRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding-top: 0.9rem;
+  margin-top: 0.5rem;
+  border-top: 2px solid var(--color-gold);
+}
+
+.saleTotalLabel {
+  font: 500 var(--text-sm) var(--font-ui);
+  color: var(--color-text-muted);
+}
+
+.saleTotalValue {
+  font: 600 var(--text-xl) var(--font-display);
+  color: var(--color-text);
+}
+
+/* ---- Campo condicional de pagamento inicial (fiado) ---- */
+#initialPaymentField {
+  background: var(--color-surface-alt);
+  padding: 0.9rem;
+  border-radius: 8px;
 }
 
 /* ==========================================================================
