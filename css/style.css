@@ -4,37 +4,38 @@
    ========================================================================== */
 :root {
   /* Base */
-  --color-background: #FBF1EA;      /* fundo geral, blush claro — não branco puro */
-  --color-surface: #FFFFFF;         /* cards, formulários, tabelas */
-  --color-surface-alt: #F6E4D8;     /* blocos de destaque suave, hover de linha de tabela */
+  --color-background: #fbf1ea; /* fundo geral, blush claro — não branco puro */
+  --color-surface: #ffffff; /* cards, formulários, tabelas */
+  --color-surface-alt: #f6e4d8; /* blocos de destaque suave, hover de linha de tabela */
 
   /* Texto */
-  --color-text: #3B2A22;            /* marrom-chocolate escuro, títulos e texto principal */
-  --color-text-muted: #7A6459;      /* texto secundário, labels, legendas */
+  --color-text: #3b2a22; /* marrom-chocolate escuro, títulos e texto principal */
+  --color-text-muted: #7a6459; /* texto secundário, labels, legendas */
 
   /* Marca / ação primária */
-  --color-primary: #A6334F;         /* vinho/berry — botões primários, links, destaques */
-  --color-primary-hover: #8A2A41;   /* hover/active do primário */
-  --color-primary-soft: #F3D9DF;    /* fundo suave para badges/alertas na cor primária */
+  --color-primary: #a6334f; /* vinho/berry — botões primários, links, destaques */
+  --color-primary-hover: #8a2a41; /* hover/active do primário */
+  --color-primary-soft: #f3d9df; /* fundo suave para badges/alertas na cor primária */
 
   /* Acento secundário */
-  --color-gold: #B8912F;            /* dourado — usar com moderação */
+  --color-gold: #b8912f; /* dourado — usar com moderação */
 
   /* Status (usaremos mais pra frente, na tela de vendas/fiado) */
-  --color-success: #4C7A50;
-  --color-success-soft: #E1EDE1;
-  --color-warning: #B9852F;
-  --color-warning-soft: #F5E6CC;
-  --color-danger: #9B3A3A;
-  --color-danger-soft: #F3DCDC;
+  --color-success: #4c7a50;
+  --color-success-soft: #e1ede1;
+  --color-warning: #b9852f;
+  --color-warning-soft: #f5e6cc;
+  --color-danger: #9b3a3a;
+  --color-danger-soft: #f3dcdc;
 
   /* Bordas e sombra */
-  --color-border: #E8D5C8;
+  --color-border: #e8d5c8;
   --shadow-soft: 0 2px 10px rgba(59, 42, 34, 0.08);
 
   /* Tipografia */
-  --font-display: 'Fraunces', Georgia, serif; /* títulos */
-  --font-ui: 'Inter', -apple-system, sans-serif; /* texto de interface e dados */
+  --font-display: "Fraunces", Georgia, serif; /* títulos */
+  --font-ui:
+    "Inter", -apple-system, sans-serif; /* texto de interface e dados */
 
   --text-xs: 0.75rem;
   --text-sm: 0.875rem;
@@ -97,7 +98,8 @@ label {
   display: block;
 }
 
-input[type="text"] {
+input[type="text"],
+input[type="number"] {
   width: 100%;
   padding: 0.65rem 0.75rem;
   border: 1px solid var(--color-border);
@@ -108,7 +110,8 @@ input[type="text"] {
 }
 
 /* Acessibilidade: nunca remover o foco visível sem substituir por outro indicador */
-input[type="text"]:focus {
+input[type="text"]:focus,
+input[type="number"]:focus {
   outline: 2px solid var(--color-primary);
   outline-offset: 1px;
 }
@@ -131,7 +134,7 @@ button {
    de "um único destaque de cor por tela" da skill de estilo visual */
 button[type="submit"] {
   background: var(--color-primary);
-  color: #FFFFFF;
+  color: #ffffff;
   border: none;
   align-self: flex-start;
 }
@@ -209,7 +212,75 @@ td .rowActionButton.danger:hover {
   background: var(--color-danger-soft);
 }
 
-/* Mensagem para quando ainda não há nenhum cliente cadastrado */
+/* ---- Reposição de estoque (linha inline na tabela de produtos) ---- */
+
+/* A linha extra que aparece logo abaixo do produto, ao clicar em
+   "Repor estoque". Usa a cor de destaque suave, para diferenciar
+   visualmente de uma linha comum de dado. */
+.restockRow td {
+  background: var(--color-surface-alt);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.restockForm {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.restockForm label {
+  margin-bottom: 0;
+  white-space: nowrap;
+}
+
+.restockForm input[type="number"] {
+  width: 6rem;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font: 400 var(--text-sm) var(--font-ui);
+}
+
+.restockForm input[type="number"]:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+}
+
+/* Botão de confirmar reposição: reaproveita o estilo do botão primário,
+   mas um pouco menor, para caber bem na linha da tabela */
+.restockForm .confirmRestockButton {
+  background: var(--color-primary);
+  color: #ffffff;
+  border: none;
+  padding: 0.4rem 0.9rem;
+  font: 600 var(--text-sm) var(--font-ui);
+}
+
+.restockForm .confirmRestockButton:hover {
+  background: var(--color-primary-hover);
+}
+
+.restockForm .cancelRestockButton {
+  background: transparent;
+  color: var(--color-text-muted);
+  border: 1.5px solid var(--color-border);
+  padding: 0.4rem 0.9rem;
+  font: 500 var(--text-sm) var(--font-ui);
+}
+
+/* Destaque numérico do estoque na tabela — números sempre em --font-ui,
+   alinhados para leitura rápida durante o trabalho */
+.stockValue {
+  font-weight: 600;
+}
+
+.stockValue.stockLow {
+  color: var(--color-danger);
+}
+
+/* Mensagem para quando ainda não há nenhum registro cadastrado
+   (reaproveitada em clientes, produtos, e futuramente vendas) */
 .emptyState {
   color: var(--color-text-muted);
   font-style: normal;
