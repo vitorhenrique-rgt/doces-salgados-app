@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Clientes</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <main>
+    <h1>Clientes</h1>
+
+    <!-- Formulário de cadastro/edição de cliente -->
+    <section>
+      <h2>Novo cliente</h2>
+      <form id="customerForm">
+        <!-- Campo escondido: guarda o id do cliente quando estamos EDITANDO.
+             Quando está vazio, significa que é um cliente novo (criar, não editar). -->
+        <input type="hidden" id="customerId" name="customerId" />
+
+        <label for="customerName">Nome</label>
+        <input type="text" id="customerName" name="name" required />
+
+        <label for="customerPhone">Telefone</label>
+        <input type="text" id="customerPhone" name="phone" />
+
+        <label for="customerAddress">Endereço</label>
+        <input type="text" id="customerAddress" name="address" />
+
+        <button type="submit">Salvar</button>
+        <button type="button" id="cancelEditButton" hidden>Cancelar edição</button>
+      </form>
+
+      <!-- Onde vamos mostrar mensagens de erro ou sucesso para o usuário -->
+      <p id="formMessage"></p>
+    </section>
+
+    <!-- Lista de clientes já cadastrados -->
+    <section>
+      <h2>Clientes cadastrados</h2>
+      <table id="customerTable">
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>Telefone</th>
+            <th>Endereço</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody id="customerTableBody">
+          <!-- As linhas de cliente serão inseridas aqui via JavaScript -->
+        </tbody>
+      </table>
+    </section>
+  </main>
+
+  <script type="module" src="js/pages/customers.js"></script>
+</body>
+</html>

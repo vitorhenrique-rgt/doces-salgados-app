@@ -1,0 +1,227 @@
+/* ==========================================================================
+   Variáveis globais (cores, tipografia)
+   Definidas conforme a identidade visual do projeto (skill 07-estilo-visual)
+   ========================================================================== */
+:root {
+  /* Base */
+  --color-background: #FBF1EA;      /* fundo geral, blush claro — não branco puro */
+  --color-surface: #FFFFFF;         /* cards, formulários, tabelas */
+  --color-surface-alt: #F6E4D8;     /* blocos de destaque suave, hover de linha de tabela */
+
+  /* Texto */
+  --color-text: #3B2A22;            /* marrom-chocolate escuro, títulos e texto principal */
+  --color-text-muted: #7A6459;      /* texto secundário, labels, legendas */
+
+  /* Marca / ação primária */
+  --color-primary: #A6334F;         /* vinho/berry — botões primários, links, destaques */
+  --color-primary-hover: #8A2A41;   /* hover/active do primário */
+  --color-primary-soft: #F3D9DF;    /* fundo suave para badges/alertas na cor primária */
+
+  /* Acento secundário */
+  --color-gold: #B8912F;            /* dourado — usar com moderação */
+
+  /* Status (usaremos mais pra frente, na tela de vendas/fiado) */
+  --color-success: #4C7A50;
+  --color-success-soft: #E1EDE1;
+  --color-warning: #B9852F;
+  --color-warning-soft: #F5E6CC;
+  --color-danger: #9B3A3A;
+  --color-danger-soft: #F3DCDC;
+
+  /* Bordas e sombra */
+  --color-border: #E8D5C8;
+  --shadow-soft: 0 2px 10px rgba(59, 42, 34, 0.08);
+
+  /* Tipografia */
+  --font-display: 'Fraunces', Georgia, serif; /* títulos */
+  --font-ui: 'Inter', -apple-system, sans-serif; /* texto de interface e dados */
+
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.25rem;
+  --text-xl: 1.75rem;
+  --text-2xl: 2.25rem;
+}
+
+/* ==========================================================================
+   Reset simples e estilo base
+   ========================================================================== */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--color-background);
+  color: var(--color-text);
+  font: 400 var(--text-base) var(--font-ui);
+  line-height: 1.5;
+}
+
+main {
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 3rem;
+}
+
+h1 {
+  font: 600 var(--text-2xl) var(--font-display);
+  margin-bottom: 1.5rem;
+}
+
+h2 {
+  font: 600 var(--text-lg) var(--font-display);
+  margin-bottom: 0.75rem;
+}
+
+/* ---- Formulário de Cliente ---- */
+section {
+  background: var(--color-surface);
+  border-radius: 12px;
+  box-shadow: var(--shadow-soft);
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+label {
+  font: 500 var(--text-sm) var(--font-ui);
+  color: var(--color-text-muted);
+  margin-bottom: 0.3rem;
+  display: block;
+}
+
+input[type="text"] {
+  width: 100%;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font: 400 var(--text-base) var(--font-ui);
+  color: var(--color-text);
+  background: var(--color-surface);
+}
+
+/* Acessibilidade: nunca remover o foco visível sem substituir por outro indicador */
+input[type="text"]:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+}
+
+/* Botões ficam lado a lado, com espaço entre eles */
+form > div.formButtons,
+form > .button-row {
+  display: flex;
+  gap: 0.75rem;
+}
+
+button {
+  cursor: pointer;
+  font: 600 var(--text-base) var(--font-ui);
+  border-radius: 8px;
+  padding: 0.65rem 1.25rem;
+}
+
+/* Botão de salvar: único destaque de cor sólida na tela, conforme a regra
+   de "um único destaque de cor por tela" da skill de estilo visual */
+button[type="submit"] {
+  background: var(--color-primary);
+  color: #FFFFFF;
+  border: none;
+  align-self: flex-start;
+}
+
+button[type="submit"]:hover {
+  background: var(--color-primary-hover);
+}
+
+/* Botão de cancelar edição: secundário, contorno, sem preenchimento sólido */
+#cancelEditButton {
+  background: transparent;
+  color: var(--color-primary);
+  border: 1.5px solid var(--color-primary);
+  align-self: flex-start;
+}
+
+/* Mensagens de erro/sucesso do formulário */
+#formMessage {
+  font: 500 var(--text-sm) var(--font-ui);
+  margin-top: 0.75rem;
+}
+
+#formMessage.error {
+  color: var(--color-danger);
+}
+
+#formMessage.success {
+  color: var(--color-success);
+}
+
+/* ---- Tabela de Clientes ---- */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font: 400 var(--text-sm) var(--font-ui);
+}
+
+th {
+  text-align: left;
+  color: var(--color-text-muted);
+  font-weight: 500;
+  padding: 0.5rem 0.5rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+td {
+  padding: 0.65rem 0.5rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+/* Indica que a linha tem ações associadas (editar/excluir) */
+tbody tr:hover {
+  background: var(--color-surface-alt);
+}
+
+/* Botões pequenos de ação dentro da tabela (editar/excluir) */
+td .rowActionButton {
+  background: transparent;
+  border: none;
+  color: var(--color-primary);
+  font: 500 var(--text-sm) var(--font-ui);
+  padding: 0.2rem 0.4rem;
+  border-radius: 6px;
+}
+
+td .rowActionButton:hover {
+  background: var(--color-primary-soft);
+}
+
+td .rowActionButton.danger {
+  color: var(--color-danger);
+}
+
+td .rowActionButton.danger:hover {
+  background: var(--color-danger-soft);
+}
+
+/* Mensagem para quando ainda não há nenhum cliente cadastrado */
+.emptyState {
+  color: var(--color-text-muted);
+  font-style: normal;
+  text-align: center;
+  padding: 1rem 0;
+}
+
+/* ==========================================================================
+   Mobile-first: a partir daqui, ajustes para telas maiores
+   ========================================================================== */
+@media (min-width: 480px) {
+  form > .button-row {
+    flex-direction: row;
+  }
+}
