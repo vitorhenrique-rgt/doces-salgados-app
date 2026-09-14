@@ -7,7 +7,7 @@
 
 import { listCustomers } from '../services/customerService.js';
 import { listProducts } from '../services/productService.js';
-import { createSale, addCreditPayment } from '../services/saleService.js';
+import { createSale, addCreditPayment, listSales, getSaleById, calculateSaleBalance } from '../services/saleService.js';
 
 // ---- Referências aos elementos do HTML ----
 const formEl = document.getElementById('saleForm');
@@ -23,6 +23,7 @@ const paymentStatusSelect = document.getElementById('paymentStatusSelect');
 const initialPaymentFieldEl = document.getElementById('initialPaymentField');
 const initialPaymentInput = document.getElementById('initialPaymentInput');
 const formMessageEl = document.getElementById('formMessage');
+const salesTableBodyEl = document.getElementById('salesTableBody');
 
 // ---- Estado da tela em memória ----
 // "allProducts" guarda a lista completa de produtos, carregada uma vez ao
@@ -229,6 +230,152 @@ function updateTotal() {
   totalValueEl.textContent = formatCurrency(total);
 }
 
+// ---- Lista de vendas já registradas ----
+
+// Mapeia o status salvo no banco (em inglês) para o texto e a classe de
+// badge que aparecem na tela (em português, seguindo a skill de estilo visual)
+const paymentStatusLabels = {
+  paid: { text: 'Pago', badgeClass: 'badge--paid' },
+  partial: { text: 'Parcial', badgeClass: 'badge--partial' },
+  credit: { text: 'Fiado', badgeClass: 'badge--credit' },
+};
+
+function formatDate(isoDate) {
+  // O banco guarda a data como 'YYYY-MM-DD' — convertemos para 'DD/MM/YYYY',
+  // formato mais comum de se ler no Brasil.
+  const [ano, mes, dia] = isoDate.split('-');
+  return `${dia}/${mes}/${ano}`;
+}
+
+async function loadSales() {
+  const { data: sales, error } = await listSales();
+
+  if (error) {
+    console.error(error);
+    showFormMessage('Não foi possível carregar a lista de vendas.', 'error');
+    return;
+  }
+
+  renderSalesTable(sales);
+}
+
+function renderSalesTable(sales) {
+  salesTableBodyEl.innerHTML = '';
+
+  if (sales.length === 0) {
+    const emptyRow = document.createElement('tr');
+    emptyRow.innerHTML = `
+      <td colspan="5" class="emptyState">
+        Nenhuma venda registrada ainda. Use o formulário acima para registrar a primeira.
+      </td>
+    `;
+    salesTableBodyEl.appendChild(emptyRow);
+    return;
+  }
+
+  for (const sale of sales) {
+    const row = document.createElement('tr');
+    const statusInfo = paymentStatusLabels[sale.payment_status];
+
+    row.innerHTML = `
+      <td>${formatDate(sale.sale_date)}</td>
+      <td>${sale.customers?.name ?? '—'}</td>
+      <td>${formatCurrency(sale.total_amount)}</td>
+      <td><span class="badge ${statusInfo.badgeClass}">${statusInfo.text}</span></td>
+      <td><button type="button" class="viewSaleDetailsButton">Ver detalhes</button></td>
+    `;
+
+    row.querySelector('.viewSaleDetailsButton').addEventListener('click', () => {
+      toggleSaleDetails(sale.id, row);
+    });
+
+    salesTableBodyEl.appendChild(row);
+  }
+}
+
+// ---- Expandir/recolher os detalhes de uma venda (itens + pagamentos) ----
+
+async function toggleSaleDetails(saleId, saleRow) {
+  // Se já existe uma linha de detalhes logo depois desta, o clique é para
+  // FECHAR — só remove e para por aqui.
+  const proximaLinha = saleRow.nextElementSibling;
+  if (proximaLinha && proximaLinha.classList.contains('saleDetailsRow')) {
+    proximaLinha.remove();
+    return;
+  }
+
+  // Fecha qualquer outra linha de detalhes que esteja aberta, para não
+  // acumular vários detalhes abertos ao mesmo tempo na tela.
+  closeAnyOpenSaleDetails();
+
+  const { data: sale, error } = await getSaleById(saleId);
+
+  if (error) {
+    console.error(error);
+    showFormMessage('Não foi possível carregar os detalhes desta venda.', 'error');
+    return;
+  }
+
+  const detailsRow = document.createElement('tr');
+  detailsRow.className = 'saleDetailsRow';
+
+  const itemsHtml = sale.sale_items
+    .map(
+      (item) => `
+        <li>
+          <span>${item.products?.name ?? 'Produto removido'} (${item.quantity}x)</span>
+          <span>${formatCurrency(item.subtotal)}</span>
+        </li>
+      `
+    )
+    .join('');
+
+  // Para vendas fiado ou parciais, mostramos também o histórico de
+  // pagamentos já feitos e o saldo que ainda falta receber.
+  let pagamentosHtml = '';
+  if (sale.payment_status === 'credit' || sale.payment_status === 'partial') {
+    const listaPagamentos = sale.credit_payments.length
+      ? sale.credit_payments
+          .map(
+            (pagamento) => `
+              <li>
+                <span>${formatDate(pagamento.payment_date)}${pagamento.notes ? ` — ${pagamento.notes}` : ''}</span>
+                <span>${formatCurrency(pagamento.amount_paid)}</span>
+              </li>
+            `
+          )
+          .join('')
+      : '<li>Nenhum pagamento registrado ainda.</li>';
+
+    const saldoDevedor = calculateSaleBalance(sale);
+
+    pagamentosHtml = `
+      <h3>Pagamentos recebidos</h3>
+      <ul>${listaPagamentos}</ul>
+      <p class="saleDetailsBalance">Saldo devedor: ${formatCurrency(saldoDevedor)}</p>
+    `;
+  }
+
+  detailsRow.innerHTML = `
+    <td colspan="5">
+      <div class="saleDetailsContent">
+        <h3>Itens da venda</h3>
+        <ul>${itemsHtml}</ul>
+        ${pagamentosHtml}
+      </div>
+    </td>
+  `;
+
+  saleRow.after(detailsRow);
+}
+
+function closeAnyOpenSaleDetails() {
+  const existingRow = salesTableBodyEl.querySelector('.saleDetailsRow');
+  if (existingRow) {
+    existingRow.remove();
+  }
+}
+
 // ---- Mostrar/esconder campo de "valor recebido agora" conforme a situação ----
 
 paymentStatusSelect.addEventListener('change', () => {
@@ -315,12 +462,14 @@ formEl.addEventListener('submit', async (event) => {
         'error'
       );
       resetForm();
+      loadSales();
       return;
     }
   }
 
   showFormMessage('Venda registrada com sucesso!', 'success');
   resetForm();
+  loadSales();
 });
 
 function resetForm() {
@@ -340,6 +489,7 @@ async function init() {
   await loadCustomersIntoSelect();
   await loadProducts();
   renderSaleItems();
+  loadSales();
 }
 
 init();
