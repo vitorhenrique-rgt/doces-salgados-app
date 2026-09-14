@@ -427,8 +427,9 @@ td .rowActionButton.danger:hover {
   color: var(--color-text);
 }
 
-/* ---- Campo condicional de pagamento inicial (fiado) ---- */
-#initialPaymentField {
+/* ---- Campo de valor recebido (aparece para qualquer forma de pagamento
+   que não seja "A receber") ---- */
+#amountReceivedField {
   background: var(--color-surface-alt);
   padding: 0.9rem;
   border-radius: 8px;

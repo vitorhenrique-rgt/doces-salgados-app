@@ -19,9 +19,8 @@ const itemsTableBodyEl = document.getElementById('saleItemsTableBody');
 const noItemsMessageEl = document.getElementById('noItemsMessage');
 const totalValueEl = document.getElementById('saleTotalValue');
 const paymentMethodSelect = document.getElementById('paymentMethodSelect');
-const paymentStatusSelect = document.getElementById('paymentStatusSelect');
-const initialPaymentFieldEl = document.getElementById('initialPaymentField');
-const initialPaymentInput = document.getElementById('initialPaymentInput');
+const amountReceivedFieldEl = document.getElementById('amountReceivedField');
+const amountReceivedInput = document.getElementById('amountReceivedInput');
 const formMessageEl = document.getElementById('formMessage');
 const salesTableBodyEl = document.getElementById('salesTableBody');
 
@@ -376,14 +375,18 @@ function closeAnyOpenSaleDetails() {
   }
 }
 
-// ---- Mostrar/esconder campo de "valor recebido agora" conforme a situação ----
+// ---- Mostrar/esconder o campo de "valor recebido" conforme a forma de pagamento ----
 
-paymentStatusSelect.addEventListener('change', () => {
-  const isFiado = paymentStatusSelect.value === 'credit';
-  initialPaymentFieldEl.hidden = !isFiado;
+function updateAmountFieldVisibility() {
+  const isCredit = paymentMethodSelect.value === 'credit';
+  amountReceivedFieldEl.hidden = isCredit;
+}
 
-  if (!isFiado) {
-    initialPaymentInput.value = '';
+paymentMethodSelect.addEventListener('change', () => {
+  updateAmountFieldVisibility();
+
+  if (paymentMethodSelect.value === 'credit') {
+    amountReceivedInput.value = '';
   }
 });
 
@@ -418,14 +421,36 @@ formEl.addEventListener('submit', async (event) => {
     }
   }
 
+  const paymentMethod = paymentMethodSelect.value;
+  const isCredit = paymentMethod === 'credit';
+
+  const totalDaVenda = saleItems.reduce(
+    (soma, item) => soma + item.quantity * item.unitPrice,
+    0
+  );
+
+  // Se a forma de pagamento é "A receber", a venda inteira fica pendente e
+  // nenhum valor foi recebido agora. Para qualquer outra forma, olhamos o
+  // campo "Valor recebido agora": em branco significa pagamento total;
+  // um valor menor que o total significa que sobrou pendência parcial.
+  const valorDigitado = amountReceivedInput.value.trim();
+  const valorRecebido = isCredit
+    ? 0
+    : valorDigitado === ''
+      ? totalDaVenda
+      : Number(valorDigitado);
+
+  const paymentStatus = isCredit
+    ? 'credit'
+    : valorRecebido >= totalDaVenda
+      ? 'paid'
+      : 'partial';
+
   const saleData = {
     customerId: customerSelect.value,
     saleDate: saleDateInput.value,
-    paymentMethod: paymentMethodSelect.value,
-    // A venda sempre nasce como "paid" ou "credit" — o status "partial" só
-    // acontece depois, automaticamente, se um pagamento parcial for
-    // registrado (ver addCreditPayment logo abaixo).
-    paymentStatus: paymentStatusSelect.value,
+    paymentMethod,
+    paymentStatus,
     items: saleItems.map((item) => ({
       productId: item.productId,
       quantity: item.quantity,
@@ -441,15 +466,14 @@ formEl.addEventListener('submit', async (event) => {
     return;
   }
 
-  // Se a venda é fiado e o usuário informou um valor recebido no ato,
-  // registramos esse pagamento agora — isso já ajusta o status para
-  // "partial" (ou "paid", se o valor cobrir o total) automaticamente.
-  const valorRecebidoAgora = Number(initialPaymentInput.value);
-
-  if (saleData.paymentStatus === 'credit' && valorRecebidoAgora > 0) {
+  // Se ficou algum valor pendente (status "credit" ou "partial") e algo já
+  // foi recebido agora, registramos esse valor como o primeiro pagamento
+  // de fiado dessa venda — reaproveitando a mesma lógica que já usamos na
+  // tela de controle de fiado (quando chegarmos lá).
+  if (paymentStatus !== 'paid' && valorRecebido > 0) {
     const { error: paymentError } = await addCreditPayment(
       sale.id,
-      valorRecebidoAgora,
+      valorRecebido,
       'Pagamento recebido no momento da venda'
     );
 
@@ -476,7 +500,8 @@ function resetForm() {
   formEl.reset();
   saleItems = [];
   renderSaleItems();
-  initialPaymentFieldEl.hidden = true;
+  amountReceivedInput.value = '';
+  updateAmountFieldVisibility();
   saleDateInput.value = new Date().toISOString().slice(0, 10);
 }
 
@@ -485,6 +510,7 @@ function resetForm() {
 async function init() {
   // Data da venda já começa preenchida com hoje, para agilizar o registro
   saleDateInput.value = new Date().toISOString().slice(0, 10);
+  updateAmountFieldVisibility();
 
   await loadCustomersIntoSelect();
   await loadProducts();

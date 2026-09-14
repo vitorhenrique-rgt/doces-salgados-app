@@ -65,27 +65,23 @@
           <span class="saleTotalValue" id="saleTotalValue">R$ 0,00</span>
         </div>
 
-        <!-- ---- Forma e situação de pagamento ---- -->
+        <!-- ---- Forma de pagamento ---- -->
         <label for="paymentMethodSelect">Forma de pagamento</label>
         <select id="paymentMethodSelect" required>
           <option value="cash">Dinheiro</option>
           <option value="pix">Pix</option>
           <option value="card">Cartão</option>
-          <option value="credit">Fiado</option>
+          <option value="credit">A receber</option>
         </select>
 
-        <label for="paymentStatusSelect">Situação do pagamento</label>
-        <select id="paymentStatusSelect" required>
-          <option value="paid">Pago agora</option>
-          <option value="credit">Fiado (a receber depois)</option>
-        </select>
-
-        <!-- Só aparece quando a situação é "Fiado" — permite registrar um
-             valor recebido no ato da venda, mesmo sendo uma venda fiado
-             (ex: cliente pagou metade na hora). Campo opcional. -->
-        <div id="initialPaymentField" hidden>
-          <label for="initialPaymentInput">Valor recebido agora (opcional)</label>
-          <input type="number" id="initialPaymentInput" step="0.01" min="0" placeholder="0,00" />
+        <!-- Só aparece quando a forma de pagamento NÃO é "A receber".
+             Se o campo ficar em branco, entendemos que o valor recebido
+             foi o total da venda (pagamento completo). Se for preenchido
+             com um valor menor que o total, o restante fica em aberto
+             com situação "parcial". -->
+        <div id="amountReceivedField">
+          <label for="amountReceivedInput">Valor recebido agora</label>
+          <input type="number" id="amountReceivedInput" step="0.01" min="0" placeholder="Deixe em branco para pagamento total" />
         </div>
 
         <button type="submit">Registrar venda</button>
