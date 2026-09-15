@@ -117,10 +117,10 @@ export function calculateSaleBalance(sale) {
 
 // Registra um novo pagamento (parcial ou total) de uma venda fiado, e
 // atualiza automaticamente o status da venda se o saldo chegar a zero.
-export async function addCreditPayment(saleId, amountPaid, notes) {
+export async function addCreditPayment(saleId, amountPaid, paymentMethod, notes) {
   const { data: paymentData, error: paymentError } = await supabase
     .from('credit_payments')
-    .insert([{ sale_id: saleId, amount_paid: amountPaid, notes }])
+    .insert([{ sale_id: saleId, amount_paid: amountPaid, payment_method: paymentMethod, notes }])
     .select();
 
   if (paymentError) return { data: null, error: paymentError };
@@ -169,4 +169,71 @@ export async function listOpenCreditSales() {
     .order('sale_date', { ascending: true });
 
   return { data, error };
+}
+
+// Busca as vendas em aberto de UM cliente específico, da mais antiga para a
+// mais nova — é essa ordem que a alocação de pagamento (FIFO) usa abaixo.
+export async function listOpenCreditSalesByCustomer(customerId) {
+  const { data, error } = await supabase
+    .from('sales')
+    .select('*, credit_payments(*)')
+    .eq('customer_id', customerId)
+    .in('payment_status', ['credit', 'partial'])
+    .order('sale_date', { ascending: true });
+
+  return { data, error };
+}
+
+// Registra um único pagamento de um cliente e distribui esse valor
+// automaticamente entre as vendas em aberto dele, começando pela mais
+// antiga (alocação "FIFO" — primeira a entrar, primeira a sair), até o
+// valor se esgotar ou não sobrar mais nenhuma venda pendente.
+//
+// Ex: cliente deve R$30 (venda A) e R$20 (venda B, mais recente). Um
+// pagamento de R$40 quita a venda A inteira (R$30) e deixa R$10 na venda B
+// (que passa a "partial"). Cada "fatia" vira uma linha separada em
+// credit_payments, reaproveitando addCreditPayment (que já cuida de
+// atualizar o status de cada venda).
+export async function payCustomerCredit(customerId, amount, paymentMethod, notes) {
+  const { data: openSales, error: fetchError } = await listOpenCreditSalesByCustomer(customerId);
+  if (fetchError) return { data: null, error: fetchError };
+
+  let valorRestante = amount;
+  const pagamentosRealizados = [];
+
+  for (const sale of openSales) {
+    if (valorRestante <= 0) break;
+
+    const saldoDevedor = calculateSaleBalance(sale);
+    if (saldoDevedor <= 0) continue; // segurança: não deveria acontecer, mas evita pagamento de R$0
+
+    // Aloca o menor valor entre "quanto ainda sobrou do pagamento" e
+    // "quanto essa venda específica ainda deve"
+    const valorAlocado = Math.min(valorRestante, saldoDevedor);
+
+    const { error: paymentError } = await addCreditPayment(
+      sale.id,
+      valorAlocado,
+      paymentMethod,
+      notes
+    );
+
+    if (paymentError) {
+      // Já alocamos parte do pagamento em vendas anteriores quando isso
+      // acontece — não desfazemos o que já foi feito, só paramos aqui e
+      // avisamos que o processo não terminou por completo.
+      return { data: { pagamentosRealizados }, error: paymentError };
+    }
+
+    pagamentosRealizados.push({ saleId: sale.id, valorAlocado });
+    valorRestante -= valorAlocado;
+  }
+
+  // Se sobrou valor não alocado, é porque o pagamento foi maior do que a
+  // dívida total do cliente — devolvemos essa informação para a tela poder
+  // avisar o usuário, em vez de "perder" esse valor silenciosamente.
+  return {
+    data: { pagamentosRealizados, valorNaoAlocado: valorRestante },
+    error: null,
+  };
 }

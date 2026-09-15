@@ -474,6 +474,7 @@ formEl.addEventListener('submit', async (event) => {
     const { error: paymentError } = await addCreditPayment(
       sale.id,
       valorRecebido,
+      paymentMethod,
       'Pagamento recebido no momento da venda'
     );
 
