@@ -236,7 +236,7 @@ function updateTotal() {
 const paymentStatusLabels = {
   paid: { text: 'Pago', badgeClass: 'badge--paid' },
   partial: { text: 'Parcial', badgeClass: 'badge--partial' },
-  credit: { text: 'Fiado', badgeClass: 'badge--credit' },
+  credit: { text: 'A receber', badgeClass: 'badge--credit' },
 };
 
 function formatDate(isoDate) {

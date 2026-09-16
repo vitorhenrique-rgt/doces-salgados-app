@@ -45,6 +45,45 @@
 }
 
 /* ==========================================================================
+   Menu de navegação (compartilhado entre todas as páginas, ver js/components/nav.js)
+   ========================================================================== */
+
+/* "sticky" faz o menu ficar fixo no topo mesmo quando a página rola —
+   útil principalmente nas telas de vendas/fiado, que podem ficar longas */
+.mainNav {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  overflow-x: auto;
+}
+
+.navLink {
+  flex-shrink: 0;
+  padding: 0.5rem 0.9rem;
+  border-radius: 999px;
+  font: 500 var(--text-sm) var(--font-ui);
+  color: var(--color-text-muted);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.navLink:hover {
+  background: var(--color-surface-alt);
+}
+
+/* Destaque da página em que o usuário já está */
+.navLink--active {
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+/* ==========================================================================
    Reset simples e estilo base
    ========================================================================== */
 * {

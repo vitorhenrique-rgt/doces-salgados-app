@@ -28,7 +28,7 @@ function formatDate(isoDate) {
 
 const paymentStatusLabels = {
   partial: { text: 'Parcial', badgeClass: 'badge--partial' },
-  credit: { text: 'Fiado', badgeClass: 'badge--credit' },
+  credit: { text: 'A receber', badgeClass: 'badge--credit' },
 };
 
 // ---- Agrupar as vendas em aberto por cliente ----
