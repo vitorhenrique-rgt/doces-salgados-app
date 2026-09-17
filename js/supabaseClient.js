@@ -4,14 +4,18 @@
 // e criar a conexão com o banco. Todos os outros arquivos (services, páginas)
 // importam o "supabase" daqui, em vez de criar a própria conexão.
 //
-// Por quê? Se um dia precisarmos trocar a URL, a chave, ou até de banco de dados,
-// só mudamos em um lugar só.
+// As credenciais (URL e chave) NÃO ficam mais escritas aqui — elas vêm de
+// js/config.js, que:
+// - Localmente: você cria na mão (veja js/config.example.js), com as
+//   credenciais do banco de DEV. Esse arquivo nunca vai para o Git.
+// - Na Vercel: é gerado automaticamente pelo generate-config.js durante o
+//   deploy, usando as Environment Variables configuradas no painel da
+//   Vercel (Production -> banco de produção, Preview -> banco de dev).
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-
-const SUPABASE_URL = 'https://wykzhfknvjmqonyfupkq.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind5a3poZmtudmptcW9ueWZ1cGtxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg2MzkxNDEsImV4cCI6MjEwNDIxNTE0MX0.bBq9SDv7gTY3ssz0G25RAIAt9fRaaJ73LXoVzinEfkc';
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js';
 
 // "anon key" é segura para usar aqui porque o acesso ao banco é controlado
 // pelas regras de RLS (Row Level Security) que já configuramos no Supabase.
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+

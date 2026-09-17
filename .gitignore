@@ -1,0 +1,6 @@
+# Configuração local com credenciais do Supabase — nunca deve ir para o Git.
+# Cada pessoa cria o seu próprio a partir de js/config.example.js.
+js/config.js
+
+# Arquivos comuns do sistema operacional / editor
+.DS_Store
