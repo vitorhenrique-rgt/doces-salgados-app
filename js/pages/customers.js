@@ -11,6 +11,8 @@ import {
   updateCustomer,
   deleteCustomer,
 } from '../services/customerService.js';
+import { showConfirmModal } from '../components/confirmModal.js';
+import { iconEdit, iconTrash, actionButtonContent } from '../components/icons.js';
 
 // ---- Referências aos elementos do HTML ----
 const formEl = document.getElementById('customerForm');
@@ -100,8 +102,12 @@ function renderCustomerTable(customers) {
       <td>${customer.phone ?? ''}</td>
       <td>${customer.address ?? ''}</td>
       <td>
-        <button type="button" class="rowActionButton" data-action="edit">Editar</button>
-        <button type="button" class="rowActionButton danger" data-action="delete">Excluir</button>
+        <button type="button" class="rowActionButton" data-action="edit">
+          ${actionButtonContent(iconEdit, 'Editar')}
+        </button>
+        <button type="button" class="rowActionButton danger" data-action="delete">
+          ${actionButtonContent(iconTrash, 'Excluir')}
+        </button>
       </td>
     `;
 
@@ -123,10 +129,13 @@ function renderCustomerTable(customers) {
 // ---- Excluir cliente ----
 
 async function handleDeleteCustomer(customer) {
-  // confirm() é uma janela nativa do navegador — diferente do alert(), é
-  // aceitável aqui porque é uma ação destrutiva (perigosa) e precisa de
-  // uma confirmação clara antes de acontecer.
-  const confirmou = confirm(`Excluir o cliente "${customer.name}"? Essa ação não pode ser desfeita.`);
+  // Modal estilizado, no lugar do confirm() nativo do navegador — é uma
+  // ação destrutiva (perigosa), por isso danger: true (botão vermelho).
+  const confirmou = await showConfirmModal({
+    message: `Excluir o cliente "${customer.name}"? Essa ação não pode ser desfeita.`,
+    confirmLabel: 'Excluir',
+    danger: true,
+  });
 
   if (!confirmou) {
     return;

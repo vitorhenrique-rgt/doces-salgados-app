@@ -11,6 +11,8 @@ import {
   deleteProduct,
   increaseStock,
 } from '../services/productService.js';
+import { showConfirmModal } from '../components/confirmModal.js';
+import { iconEdit, iconPlus, iconTrash, actionButtonContent } from '../components/icons.js';
 
 // ---- Referências aos elementos do HTML ----
 const formEl = document.getElementById('productForm');
@@ -102,9 +104,15 @@ function renderProductTable(products) {
       <td>R$ ${Number(product.sale_price).toFixed(2)}</td>
       <td class="stockValue">${product.stock_quantity}</td>
       <td>
-        <button type="button" class="rowActionButton" data-action="edit">Editar</button>
-        <button type="button" class="rowActionButton" data-action="restock">Repor estoque</button>
-        <button type="button" class="rowActionButton danger" data-action="delete">Excluir</button>
+        <button type="button" class="rowActionButton" data-action="edit">
+          ${actionButtonContent(iconEdit, 'Editar')}
+        </button>
+        <button type="button" class="rowActionButton" data-action="restock">
+          ${actionButtonContent(iconPlus, 'Repor estoque')}
+        </button>
+        <button type="button" class="rowActionButton danger" data-action="delete">
+          ${actionButtonContent(iconTrash, 'Excluir')}
+        </button>
       </td>
     `;
 
@@ -187,7 +195,11 @@ function closeAnyOpenRestockRow() {
 // ---- Excluir produto ----
 
 async function handleDeleteProduct(product) {
-  const confirmou = confirm(`Excluir o produto "${product.name}"? Essa ação não pode ser desfeita.`);
+  const confirmou = await showConfirmModal({
+    message: `Excluir o produto "${product.name}"? Essa ação não pode ser desfeita.`,
+    confirmLabel: 'Excluir',
+    danger: true,
+  });
 
   if (!confirmou) {
     return;

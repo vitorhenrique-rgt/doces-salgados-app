@@ -27,6 +27,7 @@
   --color-warning-soft: #F5E6CC;
   --color-danger: #9B3A3A;
   --color-danger-soft: #F3DCDC;
+  --color-danger-hover: #7F2F2F;
 
   /* Bordas e sombra */
   --color-border: #E8D5C8;
@@ -37,8 +38,8 @@
   --font-ui: 'Inter', -apple-system, sans-serif; /* texto de interface e dados */
 
   --text-xs: 0.75rem;
-  --text-sm: 0.875rem;
-  --text-base: 1rem;
+  --text-sm: 0.9375rem;
+  --text-base: 1.0625rem;
   --text-lg: 1.25rem;
   --text-xl: 1.75rem;
   --text-2xl: 2.25rem;
@@ -49,23 +50,66 @@
    ========================================================================== */
 
 /* "sticky" faz o menu ficar fixo no topo mesmo quando a página rola —
-   útil principalmente nas telas de vendas/fiado, que podem ficar longas */
+   útil principalmente nas telas de vendas/fiado, que podem ficar longas.
+   position:sticky também serve de "âncora" para o menu suspenso (.navLinks)
+   abrir exatamente colado embaixo da barra, no mobile. */
 .mainNav {
   position: sticky;
   top: 0;
   z-index: 20;
   display: flex;
+  align-items: center;
+  justify-content: space-between;
   gap: 0.5rem;
   padding: 0.75rem 1rem;
   background: var(--color-surface);
   border-bottom: 1px solid var(--color-border);
-  overflow-x: auto;
+}
+
+/* Botão hamburguer — só existe visualmente em telas estreitas (ver media
+   query abaixo, que o esconde em telas maiores) */
+.navToggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
+  background: transparent;
+  border: 1.5px solid var(--color-border);
+  color: var(--color-text);
+  border-radius: 8px;
+}
+
+.navToggle:hover {
+  background: var(--color-surface-alt);
+}
+
+/* Em telas estreitas, os links ficam escondidos dentro de um menu que só
+   abre ao tocar no hamburguer — evita a barra rolando de lado, onde um
+   link como "A Receber" podia ficar fora da vista sem o usuário perceber
+   que ele existia. */
+.navLinks {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.75rem 1rem 1rem;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  box-shadow: var(--shadow-soft);
+}
+
+.navLinks--open {
+  display: flex;
 }
 
 .navLink {
-  flex-shrink: 0;
-  padding: 0.5rem 0.9rem;
-  border-radius: 999px;
+  padding: 0.75rem 0.9rem;
+  border-radius: 8px;
   font: 500 var(--text-sm) var(--font-ui);
   color: var(--color-text-muted);
   text-decoration: none;
@@ -81,6 +125,30 @@
   background: var(--color-primary-soft);
   color: var(--color-primary);
   font-weight: 600;
+}
+
+/* A partir daqui, a tela é larga o bastante para mostrar o menu inteiro
+   sempre visível, em linha — o hamburguer não é mais necessário */
+@media (min-width: 640px) {
+  .navToggle {
+    display: none;
+  }
+
+  .navLinks {
+    display: flex;
+    position: static;
+    flex-direction: row;
+    padding: 0;
+    background: transparent;
+    border-bottom: none;
+    box-shadow: none;
+    gap: 0.5rem;
+  }
+
+  .navLink {
+    border-radius: 999px;
+    padding: 0.5rem 0.9rem;
+  }
 }
 
 /* ==========================================================================
@@ -141,7 +209,8 @@ input[type="number"],
 input[type="date"],
 select {
   width: 100%;
-  padding: 0.65rem 0.75rem;
+  padding: 0.75rem 0.85rem;
+  min-height: 2.75rem; /* ~44px — mesmo padrão de toque confortável dos botões */
   border: 1px solid var(--color-border);
   border-radius: 8px;
   font: 400 var(--text-base) var(--font-ui);
@@ -158,10 +227,12 @@ select:focus {
   outline-offset: 1px;
 }
 
-/* Botões ficam lado a lado, com espaço entre eles */
+/* Botões ficam empilhados por padrão no mobile (ocupando a largura toda,
+   igual aos inputs); em telas maiores, ficam lado a lado (ver media query) */
 form > div.formButtons,
 form > .button-row {
   display: flex;
+  flex-direction: column;
   gap: 0.75rem;
 }
 
@@ -169,16 +240,19 @@ button {
   cursor: pointer;
   font: 600 var(--text-base) var(--font-ui);
   border-radius: 8px;
-  padding: 0.65rem 1.25rem;
+  padding: 0.75rem 1.25rem;
+  min-height: 2.75rem; /* ~44px — tamanho mínimo recomendado para toque confortável */
 }
 
 /* Botão de salvar: único destaque de cor sólida na tela, conforme a regra
-   de "um único destaque de cor por tela" da skill de estilo visual */
+   de "um único destaque de cor por tela" da skill de estilo visual.
+   width: 100% no mobile, para alinhar com a largura dos inputs acima —
+   em telas maiores (ver media query), volta a ser do tamanho do texto. */
 button[type="submit"] {
   background: var(--color-primary);
   color: #FFFFFF;
   border: none;
-  align-self: flex-start;
+  width: 100%;
 }
 
 button[type="submit"]:hover {
@@ -190,7 +264,7 @@ button[type="submit"]:hover {
   background: transparent;
   color: var(--color-primary);
   border: 1.5px solid var(--color-primary);
-  align-self: flex-start;
+  width: 100%;
 }
 
 /* Mensagens de erro/sucesso do formulário */
@@ -234,12 +308,39 @@ tbody tr:hover {
 
 /* Botões pequenos de ação dentro da tabela (editar/excluir) */
 td .rowActionButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
   background: transparent;
   border: none;
   color: var(--color-primary);
   font: 500 var(--text-sm) var(--font-ui);
-  padding: 0.2rem 0.4rem;
+  padding: 0.6rem 0.8rem;
+  min-height: 2.75rem;
   border-radius: 6px;
+}
+
+.actionIcon {
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+/* Em telas pequenas, os botões de ação mostram só o ícone — o texto
+   continua no HTML (leitor de tela ainda anuncia "Editar", "Excluir" etc.
+   normalmente), só fica visualmente escondido. Isso evita o texto quebrar
+   linha e bagunçar a tabela em telas estreitas. */
+@media (max-width: 479px) {
+  .actionLabel {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
 }
 
 td .rowActionButton:hover {
@@ -266,37 +367,20 @@ td .rowActionButton.danger:hover {
 
 .restockForm {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: stretch;
   gap: 0.6rem;
-  flex-wrap: wrap;
 }
 
 .restockForm label {
-  margin-bottom: 0;
-  white-space: nowrap;
+  margin-bottom: 0.25rem;
 }
 
-.restockForm input[type="number"] {
-  width: 6rem;
-  padding: 0.4rem 0.6rem;
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  font: 400 var(--text-sm) var(--font-ui);
-}
-
-.restockForm input[type="number"]:focus {
-  outline: 2px solid var(--color-primary);
-  outline-offset: 1px;
-}
-
-/* Botão de confirmar reposição: reaproveita o estilo do botão primário,
-   mas um pouco menor, para caber bem na linha da tabela */
+/* Botão de confirmar reposição: reaproveita o estilo do botão primário */
 .restockForm .confirmRestockButton {
   background: var(--color-primary);
   color: #FFFFFF;
   border: none;
-  padding: 0.4rem 0.9rem;
-  font: 600 var(--text-sm) var(--font-ui);
 }
 
 .restockForm .confirmRestockButton:hover {
@@ -307,8 +391,6 @@ td .rowActionButton.danger:hover {
   background: transparent;
   color: var(--color-text-muted);
   border: 1.5px solid var(--color-border);
-  padding: 0.4rem 0.9rem;
-  font: 500 var(--text-sm) var(--font-ui);
 }
 
 /* Destaque numérico do estoque na tabela — números sempre em --font-ui,
@@ -409,8 +491,9 @@ td .rowActionButton.danger:hover {
 }
 
 .qtyStepper button {
-  width: 2rem;
-  height: 2rem;
+  width: 2.75rem;
+  height: 2.75rem;
+  min-height: 2.75rem;
   padding: 0;
   border: 1.5px solid var(--color-border);
   background: var(--color-surface);
@@ -432,11 +515,15 @@ td .rowActionButton.danger:hover {
 
 /* Botão de remover item da venda — reaproveita o padrão de ação perigosa */
 .removeItemButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
   background: transparent;
   border: none;
   color: var(--color-danger);
   font: 500 var(--text-sm) var(--font-ui);
-  padding: 0.3rem 0.5rem;
+  padding: 0.5rem 0.7rem;
+  min-height: 2.75rem;
   border-radius: 6px;
 }
 
@@ -502,11 +589,15 @@ td .rowActionButton.danger:hover {
 
 /* Botão "Ver detalhes" de uma venda — reaproveita o padrão de ação da tabela */
 .viewSaleDetailsButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
   background: transparent;
   border: none;
   color: var(--color-primary);
   font: 500 var(--text-sm) var(--font-ui);
-  padding: 0.2rem 0.4rem;
+  padding: 0.6rem 0.8rem;
+  min-height: 2.75rem;
   border-radius: 6px;
 }
 
@@ -610,42 +701,20 @@ td .rowActionButton.danger:hover {
    reposição de estoque, para manter consistência entre as telas */
 .paymentForm {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: stretch;
   gap: 0.6rem;
-  flex-wrap: wrap;
   margin-top: 0.6rem;
 }
 
 .paymentForm label {
-  margin-bottom: 0;
-  white-space: nowrap;
-}
-
-.paymentForm input[type="number"],
-.paymentForm input[type="text"],
-.paymentForm select {
-  padding: 0.4rem 0.6rem;
-  font: 400 var(--text-sm) var(--font-ui);
-}
-
-.paymentForm input[type="number"] {
-  width: 6rem;
-}
-
-.paymentForm input[type="text"] {
-  width: 10rem;
-}
-
-.paymentForm select {
-  width: auto;
+  margin-bottom: 0.25rem;
 }
 
 .paymentForm .confirmPaymentButton {
   background: var(--color-primary);
   color: #FFFFFF;
   border: none;
-  padding: 0.4rem 0.9rem;
-  font: 600 var(--text-sm) var(--font-ui);
 }
 
 .paymentForm .confirmPaymentButton:hover {
@@ -656,8 +725,84 @@ td .rowActionButton.danger:hover {
   background: transparent;
   color: var(--color-text-muted);
   border: 1.5px solid var(--color-border);
-  padding: 0.4rem 0.9rem;
-  font: 500 var(--text-sm) var(--font-ui);
+}
+
+/* ==========================================================================
+   Modal de confirmação (substitui o confirm() nativo do navegador)
+   ========================================================================== */
+
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(59, 42, 34, 0.45); /* marrom-texto com transparência, mais harmônico que preto puro */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 100;
+  animation: modalFadeIn 0.15s ease-out;
+}
+
+.modalDialog {
+  background: var(--color-surface);
+  border-radius: 12px;
+  box-shadow: var(--shadow-soft);
+  padding: 1.5rem;
+  max-width: 360px;
+  width: 100%;
+  animation: modalPopIn 0.15s ease-out;
+}
+
+.modalTitle {
+  font: 600 var(--text-lg) var(--font-display);
+  margin: 0 0 0.5rem;
+}
+
+.modalMessage {
+  font: 400 var(--text-base) var(--font-ui);
+  color: var(--color-text-muted);
+  margin: 0 0 1.25rem;
+}
+
+.modalActions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.modalCancelButton {
+  background: transparent;
+  color: var(--color-text-muted);
+  border: 1.5px solid var(--color-border);
+}
+
+.modalConfirmButton {
+  background: var(--color-primary);
+  color: #FFFFFF;
+  border: none;
+}
+
+.modalConfirmButton:hover {
+  background: var(--color-primary-hover);
+}
+
+.modalConfirmButton--danger {
+  background: var(--color-danger);
+}
+
+.modalConfirmButton--danger:hover {
+  background: var(--color-danger-hover);
+}
+
+@keyframes modalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalPopIn {
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
 }
 
 /* ==========================================================================
@@ -666,5 +811,60 @@ td .rowActionButton.danger:hover {
 @media (min-width: 480px) {
   form > .button-row {
     flex-direction: row;
+  }
+
+  button[type="submit"],
+  #cancelEditButton {
+    width: auto;
+  }
+
+  /* Formulários inline (reposição de estoque, pagamento) voltam a ficar
+     lado a lado e compactos — no mobile, ficam empilhados em largura
+     total (ver regras mobile-first acima) */
+  .restockForm,
+  .paymentForm {
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .restockForm label,
+  .paymentForm label {
+    margin-bottom: 0;
+    white-space: nowrap;
+  }
+
+  .restockForm input[type="number"],
+  .paymentForm input[type="number"],
+  .paymentForm input[type="text"],
+  .paymentForm select {
+    width: auto;
+    min-height: auto;
+    padding: 0.4rem 0.6rem;
+    font: 400 var(--text-sm) var(--font-ui);
+  }
+
+  .restockForm input[type="number"],
+  .paymentForm input[type="number"] {
+    width: 6rem;
+  }
+
+  .paymentForm input[type="text"] {
+    width: 10rem;
+  }
+
+  .restockForm .confirmRestockButton,
+  .restockForm .cancelRestockButton,
+  .paymentForm .confirmPaymentButton,
+  .paymentForm .cancelPaymentButton {
+    width: auto;
+    padding: 0.4rem 0.9rem;
+    min-height: auto;
+    font: 600 var(--text-sm) var(--font-ui);
+  }
+
+  .restockForm .cancelRestockButton,
+  .paymentForm .cancelPaymentButton {
+    font-weight: 500;
   }
 }
