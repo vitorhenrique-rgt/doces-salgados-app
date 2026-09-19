@@ -281,7 +281,15 @@ button[type="submit"]:hover {
   color: var(--color-success);
 }
 
-/* ---- Tabela de Clientes ---- */
+/* ---- Tabelas (listas de vendas, clientes, produtos) ---- */
+/* O scroll fica contido dentro da própria tabela (não a página inteira) —
+   evita que colunas apertadas ou blocos internos (como o de reposição de
+   estoque) "estourem" a largura da tela em telas pequenas. */
+.tableScroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;

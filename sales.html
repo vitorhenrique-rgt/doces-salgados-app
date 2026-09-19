@@ -42,19 +42,21 @@
 
         <!-- ---- Itens já adicionados à venda ---- -->
         <div class="saleItemsWrapper">
-          <table id="saleItemsTable">
-            <thead>
-              <tr>
-                <th>Produto</th>
-                <th>Qtd.</th>
-                <th>Subtotal</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody id="saleItemsTableBody">
-              <!-- Linhas inseridas via JavaScript conforme produtos são adicionados -->
-            </tbody>
-          </table>
+          <div class="tableScroll">
+            <table id="saleItemsTable">
+              <thead>
+                <tr>
+                  <th>Produto</th>
+                  <th>Qtd.</th>
+                  <th>Subtotal</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="saleItemsTableBody">
+                <!-- Linhas inseridas via JavaScript conforme produtos são adicionados -->
+              </tbody>
+            </table>
+          </div>
           <p id="noItemsMessage" class="emptyState">
             Nenhum produto adicionado ainda. Use a busca acima para adicionar o primeiro.
           </p>
@@ -94,20 +96,22 @@
     <!-- Lista de vendas já registradas -->
     <section>
       <h2>Vendas registradas</h2>
-      <table id="salesTable">
-        <thead>
-          <tr>
-            <th>Data</th>
-            <th>Cliente</th>
-            <th>Total</th>
-            <th>Situação</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody id="salesTableBody">
-          <!-- As linhas de venda serão inseridas aqui via JavaScript -->
-        </tbody>
-      </table>
+      <div class="tableScroll">
+        <table id="salesTable">
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Cliente</th>
+              <th>Total</th>
+              <th>Situação</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="salesTableBody">
+            <!-- As linhas de venda serão inseridas aqui via JavaScript -->
+          </tbody>
+        </table>
+      </div>
     </section>
   </main>
 
