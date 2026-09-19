@@ -12,6 +12,7 @@ import {
   payCustomerCredit,
 } from '../services/saleService.js';
 import { formatCurrency } from '../utils/formatCurrency.js';
+import { iconEye, actionButtonContent } from '../components/icons.js';
 
 const tableBodyEl = document.getElementById('creditTableBody');
 const formMessageEl = document.getElementById('formMessage');
@@ -112,7 +113,11 @@ function renderCreditTable(customerGroups) {
     row.innerHTML = `
       <td>${group.customerName}</td>
       <td class="creditTotalOwed">${formatCurrency(group.totalOwed)}</td>
-      <td><button type="button" class="rowActionButton" data-action="toggle">Ver detalhes</button></td>
+      <td>
+        <button type="button" class="rowActionButton" data-action="toggle">
+          ${actionButtonContent(iconEye, 'Ver detalhes')}
+        </button>
+      </td>
     `;
 
     row.querySelector('[data-action="toggle"]').addEventListener('click', () => {

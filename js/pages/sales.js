@@ -8,6 +8,8 @@
 import { listCustomers } from '../services/customerService.js';
 import { listProducts } from '../services/productService.js';
 import { createSale, addCreditPayment, listSales, getSaleById, calculateSaleBalance } from '../services/saleService.js';
+import { showConfirmModal } from '../components/confirmModal.js';
+import { iconEye, iconTrash, actionButtonContent } from '../components/icons.js';
 
 // ---- Referências aos elementos do HTML ----
 const formEl = document.getElementById('saleForm');
@@ -200,7 +202,11 @@ function renderSaleItems() {
         </div>
       </td>
       <td>${formatCurrency(subtotal)}</td>
-      <td><button type="button" class="removeItemButton">Remover</button></td>
+      <td>
+        <button type="button" class="removeItemButton">
+          ${actionButtonContent(iconTrash, 'Remover')}
+        </button>
+      </td>
     `;
 
     row.querySelector('[data-action="decrease"]').addEventListener('click', () => {
@@ -281,7 +287,11 @@ function renderSalesTable(sales) {
       <td>${sale.customers?.name ?? '—'}</td>
       <td>${formatCurrency(sale.total_amount)}</td>
       <td><span class="badge ${statusInfo.badgeClass}">${statusInfo.text}</span></td>
-      <td><button type="button" class="viewSaleDetailsButton">Ver detalhes</button></td>
+      <td>
+        <button type="button" class="viewSaleDetailsButton">
+          ${actionButtonContent(iconEye, 'Ver detalhes')}
+        </button>
+      </td>
     `;
 
     row.querySelector('.viewSaleDetailsButton').addEventListener('click', () => {
@@ -412,9 +422,12 @@ formEl.addEventListener('submit', async (event) => {
 
   if (itensSemEstoque.length > 0) {
     const nomesItens = itensSemEstoque.map((item) => item.name).join(', ');
-    const confirmou = confirm(
-      `Estoque insuficiente para: ${nomesItens}. Confirma a venda mesmo assim?`
-    );
+    const confirmou = await showConfirmModal({
+      title: 'Estoque insuficiente',
+      message: `Estoque insuficiente para: ${nomesItens}. Confirma a venda mesmo assim?`,
+      confirmLabel: 'Confirmar venda',
+      cancelLabel: 'Revisar itens',
+    });
 
     if (!confirmou) {
       return;
