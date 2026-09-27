@@ -12,6 +12,12 @@
 export function formatPhoneNumber(rawValue) {
   const digits = rawValue.replace(/\D/g, '').slice(0, 11);
 
+  // Sem dígitos = sem telefone. Sem isso, o replace abaixo ainda tenta
+  // montar a máscara e sobra um "(" sozinho na tela.
+  if (digits.length === 0) {
+    return '';
+  }
+
   if (digits.length <= 2) {
     return digits.replace(/^(\d{0,2})/, '($1');
   }

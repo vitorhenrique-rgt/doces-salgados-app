@@ -13,6 +13,12 @@ import {
 } from '../services/customerService.js';
 import { showConfirmModal } from '../components/confirmModal.js';
 import { iconEdit, iconTrash, actionButtonContent } from '../components/icons.js';
+import {
+  formatPhoneNumber,
+  onlyDigits,
+  onlyLetters,
+  capitalizeName,
+} from '../utils/inputMasks.js';
 
 // ---- Referências aos elementos do HTML ----
 const formEl = document.getElementById('customerForm');
@@ -23,6 +29,29 @@ const addressInput = document.getElementById('customerAddress');
 const cancelEditButton = document.getElementById('cancelEditButton');
 const formMessageEl = document.getElementById('formMessage');
 const tableBodyEl = document.getElementById('customerTableBody');
+
+// ---- Máscaras de input (telefone e nome) ----
+//
+// Aplica a máscara (11) 98888-7777 conforme a pessoa digita. Reatribuir
+// phoneInput.value dentro do próprio listener de "input" é o padrão para
+// máscara progressiva: a cada tecla, reformatamos o valor inteiro.
+phoneInput.addEventListener('input', () => {
+  phoneInput.value = formatPhoneNumber(phoneInput.value);
+});
+
+// Filtra em tempo real (só letras, acentos, espaço, hífen e apóstrofo)
+// enquanto a pessoa digita o nome...
+nameInput.addEventListener('input', () => {
+  nameInput.value = onlyLetters(nameInput.value);
+});
+
+// ...e capitaliza só quando ela sai do campo (blur), não a cada letra —
+// se capitalizássemos a cada tecla, ficaria estranho no meio da digitação
+// (ex: usuário digitando "maria" letra a letra veria "M", "Ma", "Mar"...
+// virando maiúscula toda hora de forma incômoda).
+nameInput.addEventListener('blur', () => {
+  nameInput.value = capitalizeName(nameInput.value);
+});
 
 // ---- Mensagens para o usuário (sem usar alert(), como definido nas convenções) ----
 
@@ -45,7 +74,9 @@ function enterEditMode(customer) {
   // que agora é uma atualização, não uma criação.
   customerIdInput.value = customer.id;
   nameInput.value = customer.name;
-  phoneInput.value = customer.phone ?? '';
+  // O banco guarda o telefone só com dígitos — formatamos aqui só para
+  // exibição no campo, igual já fazemos na tabela.
+  phoneInput.value = formatPhoneNumber(customer.phone ?? '');
   addressInput.value = customer.address ?? '';
   cancelEditButton.hidden = false;
 }
@@ -99,7 +130,7 @@ function renderCustomerTable(customers) {
 
     row.innerHTML = `
       <td>${customer.name}</td>
-      <td>${customer.phone ?? ''}</td>
+      <td>${formatPhoneNumber(customer.phone ?? '')}</td>
       <td>${customer.address ?? ''}</td>
       <td>
         <button type="button" class="rowActionButton" data-action="edit">
@@ -161,9 +192,14 @@ formEl.addEventListener('submit', async (event) => {
   // Impede o comportamento padrão do formulário, que seria recarregar a página
   event.preventDefault();
 
+  // capitalizeName() aqui de novo (além do listener de blur) é uma
+  // segurança extra: cobre o caso do usuário colar um texto e enviar o
+  // formulário sem nunca sair do campo (sem disparar o blur).
+  // onlyDigits() garante que o banco recebe só números, sem a máscara
+  // visual "(11) 98888-7777" — a formatação é só para exibição na tela.
   const customerData = {
-    name: nameInput.value.trim(),
-    phone: phoneInput.value.trim(),
+    name: capitalizeName(nameInput.value.trim()),
+    phone: onlyDigits(phoneInput.value),
     address: addressInput.value.trim(),
   };
 
