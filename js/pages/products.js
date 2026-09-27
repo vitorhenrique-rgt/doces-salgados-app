@@ -13,6 +13,7 @@ import {
 } from '../services/productService.js';
 import { showConfirmModal } from '../components/confirmModal.js';
 import { iconEdit, iconPlus, iconTrash, actionButtonContent } from '../components/icons.js';
+import { enforceIntegerString } from '../utils/inputMasks.js';
 
 // ---- Referências aos elementos do HTML ----
 const formEl = document.getElementById('productForm');
@@ -25,6 +26,16 @@ const initialStockFieldEl = document.getElementById('initialStockField');
 const cancelEditButton = document.getElementById('cancelEditButton');
 const formMessageEl = document.getElementById('formMessage');
 const tableBodyEl = document.getElementById('productTableBody');
+
+// ---- Máscara do campo de estoque inicial ----
+//
+// Estoque é sempre unidade inteira (não existe "12.5 unidades prontas").
+// enforceIntegerString corta a parte decimal em vez de só remover o ponto
+// (evita que "12.5" vire "125" por engano) — ver comentário na própria
+// função, em js/utils/inputMasks.js.
+initialStockInput.addEventListener('input', () => {
+  initialStockInput.value = enforceIntegerString(initialStockInput.value);
+});
 
 // ---- Mensagens para o usuário ----
 
@@ -162,6 +173,14 @@ function openRestockRow(product, productRow) {
   const cancelButton = restockRow.querySelector('.cancelRestockButton');
 
   amountInput.focus();
+
+  // Mesma máscara de número inteiro do estoque inicial — como este campo
+  // é criado dinamicamente a cada clique em "Repor estoque", o listener
+  // precisa ser registrado aqui dentro, e não junto dos outros no topo do
+  // arquivo (o elemento ainda não existe até este ponto do código rodar).
+  amountInput.addEventListener('input', () => {
+    amountInput.value = enforceIntegerString(amountInput.value);
+  });
 
   cancelButton.addEventListener('click', () => {
     restockRow.remove();
