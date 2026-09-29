@@ -14,50 +14,60 @@
   <main>
     <h1>Clientes</h1>
 
-    <!-- Formulário de cadastro/edição de cliente -->
-    <section>
-      <h2>Novo cliente</h2>
-      <form id="customerForm">
-        <!-- Campo escondido: guarda o id do cliente quando estamos EDITANDO.
-             Quando está vazio, significa que é um cliente novo (criar, não editar). -->
-        <input type="hidden" id="customerId" name="customerId" />
+    <!-- Mensagens de erro ou sucesso ficam FORA das duas visões, no topo:
+         assim aparecem tanto na lista (ex: "Cliente cadastrado com sucesso")
+         quanto no formulário (ex: erro ao salvar). -->
+    <p id="formMessage"></p>
 
-        <label for="customerName">Nome</label>
-        <input type="text" id="customerName" name="name" required />
+    <!-- ==== Visão 1: LISTA de clientes (é a que aparece ao abrir a página) ==== -->
+    <div id="listView">
+      <section>
+        <div class="listHeader">
+          <h2>Clientes cadastrados</h2>
+          <button type="button" id="newCustomerButton" class="primaryButton">Novo cliente</button>
+        </div>
 
-        <label for="customerPhone">Telefone</label>
-        <input type="text" id="customerPhone" name="phone" />
+        <label for="customerSearch">Buscar cliente</label>
+        <input
+          type="search"
+          id="customerSearch"
+          placeholder="Nome, telefone ou endereço"
+          autocomplete="off"
+        />
 
-        <label for="customerAddress">Endereço</label>
-        <input type="text" id="customerAddress" name="address" />
+        <!-- Lista de clientes: cada cliente vira um <li> (bloco com as
+             informações empilhadas e os botões de ação sempre visíveis) -->
+        <ul id="customerList" class="recordList">
+          <!-- Os clientes serão inseridos aqui via JavaScript -->
+        </ul>
+      </section>
+    </div>
 
-        <button type="submit">Salvar</button>
-        <button type="button" id="cancelEditButton" hidden>Cancelar edição</button>
-      </form>
+    <!-- ==== Visão 2: FORMULÁRIO de cadastro/edição (começa escondida) ==== -->
+    <div id="formView" hidden>
+      <section>
+        <h2 id="formTitle">Novo cliente</h2>
+        <form id="customerForm">
+          <!-- Campo escondido: guarda o id do cliente quando estamos EDITANDO.
+               Quando está vazio, significa que é um cliente novo (criar, não editar). -->
+          <input type="hidden" id="customerId" name="customerId" />
 
-      <!-- Onde vamos mostrar mensagens de erro ou sucesso para o usuário -->
-      <p id="formMessage"></p>
-    </section>
+          <label for="customerName">Nome</label>
+          <input type="text" id="customerName" name="name" required />
 
-    <!-- Lista de clientes já cadastrados -->
-    <section>
-      <h2>Clientes cadastrados</h2>
-      <div class="tableScroll">
-        <table id="customerTable">
-          <thead>
-            <tr>
-              <th>Nome</th>
-              <th>Telefone</th>
-              <th>Endereço</th>
-              <th>Ações</th>
-            </tr>
-          </thead>
-          <tbody id="customerTableBody">
-            <!-- As linhas de cliente serão inseridas aqui via JavaScript -->
-          </tbody>
-        </table>
-      </div>
-    </section>
+          <label for="customerPhone">Telefone</label>
+          <input type="text" id="customerPhone" name="phone" inputmode="tel" />
+
+          <label for="customerAddress">Endereço</label>
+          <input type="text" id="customerAddress" name="address" />
+
+          <div class="button-row">
+            <button type="submit">Salvar cliente</button>
+            <button type="button" id="cancelEditButton">Cancelar</button>
+          </div>
+        </form>
+      </section>
+    </div>
   </main>
 
   <script type="module" src="js/components/nav.js"></script>
