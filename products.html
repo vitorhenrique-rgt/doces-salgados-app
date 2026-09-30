@@ -14,59 +14,67 @@
   <main>
     <h1>Produtos</h1>
 
-    <!-- Formulário de cadastro/edição de produto -->
-    <section>
-      <h2>Novo produto</h2>
-      <form id="productForm">
-        <!-- Campo escondido: guarda o id do produto quando estamos EDITANDO. -->
-        <input type="hidden" id="productId" name="productId" />
+    <!-- Mensagens de erro ou sucesso ficam FORA das duas visões, no topo:
+         assim aparecem tanto na lista (ex: "Produto excluído com sucesso")
+         quanto no formulário (ex: erro ao salvar) e na ação de repor estoque. -->
+    <p id="formMessage"></p>
 
-        <label for="productName">Nome</label>
-        <input type="text" id="productName" name="name" required />
-
-        <label for="productSalePrice">Preço de venda (R$)</label>
-        <input type="number" id="productSalePrice" name="sale_price" step="0.01" min="0" required />
-
-        <label for="productCategory">Categoria</label>
-        <input type="text" id="productCategory" name="category" />
-
-        <!-- O estoque inicial só é pedido ao CRIAR um produto novo.
-             Ao editar, este campo fica escondido — reposição de estoque
-             é feita por uma ação separada, direto na lista de produtos. -->
-        <div id="initialStockField">
-          <label for="productInitialStock">Estoque inicial (unidades prontas)</label>
-          <input type="number" id="productInitialStock" name="stock_quantity" step="1" min="0" value="0" />
+    <!-- ==== Visão 1: LISTA de produtos (é a que aparece ao abrir a página) ==== -->
+    <div id="listView">
+      <section>
+        <div class="listHeader">
+          <h2>Produtos cadastrados</h2>
+          <button type="button" id="newProductButton" class="primaryButton">Novo produto</button>
         </div>
 
-        <div class="button-row">
-          <button type="submit">Salvar</button>
-          <button type="button" id="cancelEditButton" hidden>Cancelar edição</button>
-        </div>
-      </form>
+        <label for="productSearch">Buscar produto</label>
+        <input
+          type="search"
+          id="productSearch"
+          placeholder="Nome ou categoria"
+          autocomplete="off"
+        />
 
-      <p id="formMessage"></p>
-    </section>
+        <!-- Lista de produtos: cada produto vira um <li> (bloco com as
+             informações empilhadas e os botões de ação sempre visíveis) -->
+        <ul id="productList" class="recordList">
+          <!-- Os produtos serão inseridos aqui via JavaScript -->
+        </ul>
+      </section>
+    </div>
 
-    <!-- Lista de produtos já cadastrados -->
-    <section>
-      <h2>Produtos cadastrados</h2>
-      <div class="tableScroll">
-        <table id="productTable">
-          <thead>
-            <tr>
-              <th>Nome</th>
-              <th>Categoria</th>
-              <th>Preço</th>
-              <th>Estoque</th>
-              <th>Ações</th>
-            </tr>
-          </thead>
-          <tbody id="productTableBody">
-            <!-- As linhas de produto serão inseridas aqui via JavaScript -->
-          </tbody>
-        </table>
-      </div>
-    </section>
+    <!-- ==== Visão 2: FORMULÁRIO de cadastro/edição (começa escondida) ==== -->
+    <div id="formView" hidden>
+      <section>
+        <h2 id="formTitle">Novo produto</h2>
+        <form id="productForm">
+          <!-- Campo escondido: guarda o id do produto quando estamos EDITANDO. -->
+          <input type="hidden" id="productId" name="productId" />
+
+          <label for="productName">Nome</label>
+          <input type="text" id="productName" name="name" required />
+
+          <label for="productSalePrice">Preço de venda (R$)</label>
+          <input type="number" id="productSalePrice" name="sale_price" step="0.01" min="0" required />
+
+          <label for="productCategory">Categoria</label>
+          <input type="text" id="productCategory" name="category" />
+
+          <!-- O estoque inicial só é pedido ao CRIAR um produto novo.
+               Ao editar, este campo fica escondido — reposição de estoque
+               é feita por uma ação separada, direto na lista de produtos. -->
+          <div id="initialStockField">
+            <label for="productInitialStock">Estoque inicial (unidades prontas)</label>
+            <input type="number" id="productInitialStock" name="stock_quantity" step="1" min="0" value="0" />
+          </div>
+
+          <div class="button-row">
+            <button type="submit">Salvar produto</button>
+            <button type="button" id="cancelEditButton">Cancelar</button>
+          </div>
+        </form>
+      </section>
+    </div>
   </main>
 
   <script type="module" src="js/components/nav.js"></script>
