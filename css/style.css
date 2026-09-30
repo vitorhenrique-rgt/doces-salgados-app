@@ -4,38 +4,39 @@
    ========================================================================== */
 :root {
   /* Base */
-  --color-background: #FBF1EA;      /* fundo geral, blush claro — não branco puro */
-  --color-surface: #FFFFFF;         /* cards, formulários, tabelas */
-  --color-surface-alt: #F6E4D8;     /* blocos de destaque suave, hover de linha de tabela */
+  --color-background: #fbf1ea; /* fundo geral, blush claro — não branco puro */
+  --color-surface: #ffffff; /* cards, formulários, tabelas */
+  --color-surface-alt: #f6e4d8; /* blocos de destaque suave, hover de linha de tabela */
 
   /* Texto */
-  --color-text: #3B2A22;            /* marrom-chocolate escuro, títulos e texto principal */
-  --color-text-muted: #7A6459;      /* texto secundário, labels, legendas */
+  --color-text: #3b2a22; /* marrom-chocolate escuro, títulos e texto principal */
+  --color-text-muted: #7a6459; /* texto secundário, labels, legendas */
 
   /* Marca / ação primária */
-  --color-primary: #A6334F;         /* vinho/berry — botões primários, links, destaques */
-  --color-primary-hover: #8A2A41;   /* hover/active do primário */
-  --color-primary-soft: #F3D9DF;    /* fundo suave para badges/alertas na cor primária */
+  --color-primary: #a6334f; /* vinho/berry — botões primários, links, destaques */
+  --color-primary-hover: #8a2a41; /* hover/active do primário */
+  --color-primary-soft: #f3d9df; /* fundo suave para badges/alertas na cor primária */
 
   /* Acento secundário */
-  --color-gold: #B8912F;            /* dourado — usar com moderação */
+  --color-gold: #b8912f; /* dourado — usar com moderação */
 
   /* Status (usaremos mais pra frente, na tela de vendas/fiado) */
-  --color-success: #4C7A50;
-  --color-success-soft: #E1EDE1;
-  --color-warning: #B9852F;
-  --color-warning-soft: #F5E6CC;
-  --color-danger: #9B3A3A;
-  --color-danger-soft: #F3DCDC;
-  --color-danger-hover: #7F2F2F;
+  --color-success: #4c7a50;
+  --color-success-soft: #e1ede1;
+  --color-warning: #b9852f;
+  --color-warning-soft: #f5e6cc;
+  --color-danger: #9b3a3a;
+  --color-danger-soft: #f3dcdc;
+  --color-danger-hover: #7f2f2f;
 
   /* Bordas e sombra */
-  --color-border: #E8D5C8;
+  --color-border: #e8d5c8;
   --shadow-soft: 0 2px 10px rgba(59, 42, 34, 0.08);
 
   /* Tipografia */
-  --font-display: 'Fraunces', Georgia, serif; /* títulos */
-  --font-ui: 'Inter', -apple-system, sans-serif; /* texto de interface e dados */
+  --font-display: "Fraunces", Georgia, serif; /* títulos */
+  --font-ui:
+    "Inter", -apple-system, sans-serif; /* texto de interface e dados */
 
   --text-xs: 0.75rem;
   --text-sm: 0.9375rem;
@@ -207,6 +208,7 @@ label {
 input[type="text"],
 input[type="number"],
 input[type="date"],
+input[type="search"],
 select {
   width: 100%;
   padding: 0.75rem 0.85rem;
@@ -216,12 +218,18 @@ select {
   font: 400 var(--text-base) var(--font-ui);
   color: var(--color-text);
   background: var(--color-surface);
+  /* Remove o estilo padrão do navegador para input de busca (círculo de
+     limpar em formato diferente, cantos redondos demais em alguns
+     navegadores) — assim fica igual aos outros campos de texto. */
+  appearance: none;
+  -webkit-appearance: none;
 }
 
 /* Acessibilidade: nunca remover o foco visível sem substituir por outro indicador */
 input[type="text"]:focus,
 input[type="number"]:focus,
 input[type="date"]:focus,
+input[type="search"]:focus,
 select:focus {
   outline: 2px solid var(--color-primary);
   outline-offset: 1px;
@@ -250,7 +258,7 @@ button {
    em telas maiores (ver media query), volta a ser do tamanho do texto. */
 button[type="submit"] {
   background: var(--color-primary);
-  color: #FFFFFF;
+  color: #ffffff;
   border: none;
   width: 100%;
 }
@@ -281,7 +289,8 @@ button[type="submit"]:hover {
   color: var(--color-success);
 }
 
-/* ---- Tabelas (listas de vendas, clientes, produtos) ---- */
+/* ---- Tabelas (ainda usadas em Vendas e A Receber, ver seção de Listas
+   abaixo para o novo padrão de Clientes/Produtos) ---- */
 /* O scroll fica contido dentro da própria tabela (não a página inteira) —
    evita que colunas apertadas ou blocos internos (como o de reposição de
    estoque) "estourem" a largura da tela em telas pequenas. */
@@ -315,7 +324,8 @@ tbody tr:hover {
 }
 
 /* Botões pequenos de ação dentro da tabela (editar/excluir) */
-td .rowActionButton {
+td .rowActionButton,
+.recordActions .rowActionButton {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
@@ -336,8 +346,8 @@ td .rowActionButton {
 /* Em telas pequenas, os botões de ação mostram só o ícone — o texto
    continua no HTML (leitor de tela ainda anuncia "Editar", "Excluir" etc.
    normalmente), só fica visualmente escondido. Isso evita o texto quebrar
-   linha e bagunçar a tabela em telas estreitas. */
-@media (max-width: 479px) {
+   linha e bagunçar a tabela/lista em telas estreitas. */
+@media (max-width: 576px) {
   .actionLabel {
     position: absolute;
     width: 1px;
@@ -351,16 +361,142 @@ td .rowActionButton {
   }
 }
 
-td .rowActionButton:hover {
+td .rowActionButton:hover,
+.recordActions .rowActionButton:hover {
   background: var(--color-primary-soft);
 }
 
-td .rowActionButton.danger {
+td .rowActionButton.danger,
+.recordActions .rowActionButton.danger {
   color: var(--color-danger);
 }
 
-td .rowActionButton.danger:hover {
+td .rowActionButton.danger:hover,
+.recordActions .rowActionButton.danger:hover {
   background: var(--color-danger-soft);
+}
+
+/* Mensagem para quando ainda não há nenhum registro cadastrado
+   (reaproveitada em clientes, produtos, e futuramente vendas) */
+.emptyState {
+  color: var(--color-text-muted);
+  font-style: normal;
+  text-align: center;
+  padding: 1rem 0;
+}
+
+/* ==========================================================================
+   Telas de Lista + Formulário (Clientes, Produtos — ver skill de lembretes,
+   decisão de 2026-09-19)
+
+   Cada tela agora tem duas "visões" no mesmo HTML: a lista (com busca) e o
+   formulário, alternadas via JavaScript (atributo "hidden"). A lista usa
+   uma linha simples por registro, empilhada verticalmente no mobile —
+   assim os botões de ação nunca ficam escondidos fora da tela por scroll
+   lateral, sem virar uma pilha de cards com sombra repetida (o que a
+   skill de estilo visual pede para evitar).
+   ========================================================================== */
+
+/* Cabeçalho da lista: título + botão de ação principal ("Novo cliente").
+   Empilhado no mobile (o botão precisa de largura total para ser fácil de
+   tocar), lado a lado em telas maiores (ver media query). */
+.listHeader {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.listHeader h2 {
+  margin-bottom: 0;
+}
+
+/* Botão de ação principal da lista ("Novo cliente", "Novo produto"...).
+   Reaproveita o mesmo visual do botão de salvar do formulário — é o
+   único destaque de cor sólida desta tela. */
+.primaryButton {
+  background: var(--color-primary);
+  color: #ffffff;
+  border: none;
+  width: 100%;
+}
+
+.primaryButton:hover {
+  background: var(--color-primary-hover);
+}
+
+/* Campo de busca: mesmo visual dos outros inputs, com uma margem embaixo
+   para separar da lista de registros logo abaixo. */
+#customerSearch,
+#productSearch,
+#saleSearch {
+  margin-bottom: 1rem;
+}
+
+/* A lista de registros em si — sem marcadores de "<li>", sem sombra
+   própria (ela já vive dentro do <section> que tem a sombra do card) */
+.recordList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* Cada registro: informações à esquerda, ações SEMPRE à direita — tanto no
+   mobile quanto em telas maiores (é o que resolve o problema de botões
+   ficando escondidos fora da área visível, da decisão de 2026-09-19).
+   Separado do próximo por uma linha simples, mesmo padrão visual de borda
+   que já usamos nas tabelas. */
+.recordItem {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.recordList .recordItem:last-child {
+  border-bottom: none;
+}
+
+.recordInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0; /* permite que o texto quebre/trunque em vez de estourar a linha */
+}
+
+/* Nome e telefone SEMPRE empilhados juntos (mesmo em telas grandes) — é o
+   que evita a quebra de linha feia quando nome, telefone e endereço
+   competem pelo mesmo espaço horizontal. */
+.recordPrimary {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.recordTitle {
+  font: 600 var(--text-base) var(--font-ui);
+  color: var(--color-text);
+}
+
+.recordDetail {
+  font: 400 var(--text-sm) var(--font-ui);
+  color: var(--color-text-muted);
+}
+
+/* Os botões de ação: lado a lado por padrão, mas SEMPRE alinhados à
+   direita do card/linha — em telas muito estreitas, "flex-wrap" permite
+   que um botão caia para a linha de baixo sem nunca sair da coluna direita. */
+.recordActions {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.25rem;
+  flex-shrink: 0;
 }
 
 /* ---- Reposição de estoque (linha inline na tabela de produtos) ---- */
@@ -387,7 +523,7 @@ td .rowActionButton.danger:hover {
 /* Botão de confirmar reposição: reaproveita o estilo do botão primário */
 .restockForm .confirmRestockButton {
   background: var(--color-primary);
-  color: #FFFFFF;
+  color: #ffffff;
   border: none;
 }
 
@@ -409,15 +545,6 @@ td .rowActionButton.danger:hover {
 
 .stockValue.stockLow {
   color: var(--color-danger);
-}
-
-/* Mensagem para quando ainda não há nenhum registro cadastrado
-   (reaproveitada em clientes, produtos, e futuramente vendas) */
-.emptyState {
-  color: var(--color-text-muted);
-  font-style: normal;
-  text-align: center;
-  padding: 1rem 0;
 }
 
 /* ==========================================================================
@@ -721,7 +848,7 @@ td .rowActionButton.danger:hover {
 
 .paymentForm .confirmPaymentButton {
   background: var(--color-primary);
-  color: #FFFFFF;
+  color: #ffffff;
   border: none;
 }
 
@@ -742,7 +869,12 @@ td .rowActionButton.danger:hover {
 .modalOverlay {
   position: fixed;
   inset: 0;
-  background: rgba(59, 42, 34, 0.45); /* marrom-texto com transparência, mais harmônico que preto puro */
+  background: rgba(
+    59,
+    42,
+    34,
+    0.45
+  ); /* marrom-texto com transparência, mais harmônico que preto puro */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -787,7 +919,7 @@ td .rowActionButton.danger:hover {
 
 .modalConfirmButton {
   background: var(--color-primary);
-  color: #FFFFFF;
+  color: #ffffff;
   border: none;
 }
 
@@ -804,13 +936,23 @@ td .rowActionButton.danger:hover {
 }
 
 @keyframes modalFadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes modalPopIn {
-  from { transform: scale(0.95); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 /* ==========================================================================
@@ -874,5 +1016,39 @@ td .rowActionButton.danger:hover {
   .restockForm .cancelRestockButton,
   .paymentForm .cancelPaymentButton {
     font-weight: 500;
+  }
+
+  /* Cabeçalho da lista: título e botão "Novo ..." lado a lado, botão
+     com largura do próprio texto (não mais 100%) */
+  .listHeader {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .primaryButton {
+    width: auto;
+  }
+
+  /* A partir daqui sobra espaço horizontal: o endereço passa a ficar ao
+     lado do bloco nome+telefone (não embaixo), em vez de embaixo dele —
+     mas nome e telefone continuam empilhados entre si (ver .recordPrimary
+     acima, que não muda neste breakpoint). */
+  .recordItem {
+    align-items: center;
+  }
+
+  .recordInfo {
+    flex-direction: row;
+    align-items: center;
+    gap: 1.75rem;
+  }
+
+  .recordPrimary {
+    min-width: 10rem;
+  }
+
+  .recordAddress {
+    flex: 1;
   }
 }
