@@ -4,39 +4,38 @@
    ========================================================================== */
 :root {
   /* Base */
-  --color-background: #fbf1ea; /* fundo geral, blush claro — não branco puro */
-  --color-surface: #ffffff; /* cards, formulários, tabelas */
-  --color-surface-alt: #f6e4d8; /* blocos de destaque suave, hover de linha de tabela */
+  --color-background: #FBF1EA;      /* fundo geral, blush claro — não branco puro */
+  --color-surface: #FFFFFF;         /* cards, formulários, tabelas */
+  --color-surface-alt: #F6E4D8;     /* blocos de destaque suave, hover de linha de tabela */
 
   /* Texto */
-  --color-text: #3b2a22; /* marrom-chocolate escuro, títulos e texto principal */
-  --color-text-muted: #7a6459; /* texto secundário, labels, legendas */
+  --color-text: #3B2A22;            /* marrom-chocolate escuro, títulos e texto principal */
+  --color-text-muted: #7A6459;      /* texto secundário, labels, legendas */
 
   /* Marca / ação primária */
-  --color-primary: #a6334f; /* vinho/berry — botões primários, links, destaques */
-  --color-primary-hover: #8a2a41; /* hover/active do primário */
-  --color-primary-soft: #f3d9df; /* fundo suave para badges/alertas na cor primária */
+  --color-primary: #A6334F;         /* vinho/berry — botões primários, links, destaques */
+  --color-primary-hover: #8A2A41;   /* hover/active do primário */
+  --color-primary-soft: #F3D9DF;    /* fundo suave para badges/alertas na cor primária */
 
   /* Acento secundário */
-  --color-gold: #b8912f; /* dourado — usar com moderação */
+  --color-gold: #B8912F;            /* dourado — usar com moderação */
 
   /* Status (usaremos mais pra frente, na tela de vendas/fiado) */
-  --color-success: #4c7a50;
-  --color-success-soft: #e1ede1;
-  --color-warning: #b9852f;
-  --color-warning-soft: #f5e6cc;
-  --color-danger: #9b3a3a;
-  --color-danger-soft: #f3dcdc;
-  --color-danger-hover: #7f2f2f;
+  --color-success: #4C7A50;
+  --color-success-soft: #E1EDE1;
+  --color-warning: #B9852F;
+  --color-warning-soft: #F5E6CC;
+  --color-danger: #9B3A3A;
+  --color-danger-soft: #F3DCDC;
+  --color-danger-hover: #7F2F2F;
 
   /* Bordas e sombra */
-  --color-border: #e8d5c8;
+  --color-border: #E8D5C8;
   --shadow-soft: 0 2px 10px rgba(59, 42, 34, 0.08);
 
   /* Tipografia */
-  --font-display: "Fraunces", Georgia, serif; /* títulos */
-  --font-ui:
-    "Inter", -apple-system, sans-serif; /* texto de interface e dados */
+  --font-display: 'Fraunces', Georgia, serif; /* títulos */
+  --font-ui: 'Inter', -apple-system, sans-serif; /* texto de interface e dados */
 
   --text-xs: 0.75rem;
   --text-sm: 0.9375rem;
@@ -258,7 +257,7 @@ button {
    em telas maiores (ver media query), volta a ser do tamanho do texto. */
 button[type="submit"] {
   background: var(--color-primary);
-  color: #ffffff;
+  color: #FFFFFF;
   border: none;
   width: 100%;
 }
@@ -346,7 +345,10 @@ td .rowActionButton,
 /* Em telas pequenas, os botões de ação mostram só o ícone — o texto
    continua no HTML (leitor de tela ainda anuncia "Editar", "Excluir" etc.
    normalmente), só fica visualmente escondido. Isso evita o texto quebrar
-   linha e bagunçar a tabela/lista em telas estreitas. */
+   linha e bagunçar a tabela/lista em telas estreitas.
+   Breakpoint 576px (não 479px): validado em teste real de dispositivo —
+   entre 480–576px a lista já vira linha horizontal e o texto do botão
+   ainda quebrava o layout (ver skill doces-salgados-lembretes, 2026-09-29). */
 @media (max-width: 576px) {
   .actionLabel {
     position: absolute;
@@ -417,7 +419,7 @@ td .rowActionButton.danger:hover,
    único destaque de cor sólida desta tela. */
 .primaryButton {
   background: var(--color-primary);
-  color: #ffffff;
+  color: #FFFFFF;
   border: none;
   width: 100%;
 }
@@ -477,6 +479,16 @@ td .rowActionButton.danger:hover,
   gap: 0.15rem;
 }
 
+/* Agrupa informações secundárias que também precisam ficar empilhadas
+   entre si (ex: preço + estoque em Produtos), do mesmo jeito que
+   .recordPrimary empilha nome + telefone em Clientes — sem depender de
+   um separador visual como "·" para diferenciar as duas linhas. */
+.recordSecondary {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
 .recordTitle {
   font: 600 var(--text-base) var(--font-ui);
   color: var(--color-text);
@@ -499,14 +511,17 @@ td .rowActionButton.danger:hover,
   flex-shrink: 0;
 }
 
-/* ---- Reposição de estoque (linha inline na tabela de produtos) ---- */
+/* ---- Reposição de estoque (item inline na lista de produtos) ---- */
 
-/* A linha extra que aparece logo abaixo do produto, ao clicar em
+/* O item extra que aparece logo abaixo do produto, ao clicar em
    "Repor estoque". Usa a cor de destaque suave, para diferenciar
-   visualmente de uma linha comum de dado. */
-.restockRow td {
+   visualmente de um item comum da lista. Como agora a lista de produtos
+   é .recordList (<li>), e não mais uma <table>, este item recebe padding
+   e cor de fundo diretamente nele, em vez de num <td>. */
+.restockRow {
   background: var(--color-surface-alt);
   border-bottom: 1px solid var(--color-border);
+  padding: 1rem 0.5rem;
 }
 
 .restockForm {
@@ -523,7 +538,7 @@ td .rowActionButton.danger:hover,
 /* Botão de confirmar reposição: reaproveita o estilo do botão primário */
 .restockForm .confirmRestockButton {
   background: var(--color-primary);
-  color: #ffffff;
+  color: #FFFFFF;
   border: none;
 }
 
@@ -848,7 +863,7 @@ td .rowActionButton.danger:hover,
 
 .paymentForm .confirmPaymentButton {
   background: var(--color-primary);
-  color: #ffffff;
+  color: #FFFFFF;
   border: none;
 }
 
@@ -869,12 +884,7 @@ td .rowActionButton.danger:hover,
 .modalOverlay {
   position: fixed;
   inset: 0;
-  background: rgba(
-    59,
-    42,
-    34,
-    0.45
-  ); /* marrom-texto com transparência, mais harmônico que preto puro */
+  background: rgba(59, 42, 34, 0.45); /* marrom-texto com transparência, mais harmônico que preto puro */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -919,7 +929,7 @@ td .rowActionButton.danger:hover,
 
 .modalConfirmButton {
   background: var(--color-primary);
-  color: #ffffff;
+  color: #FFFFFF;
   border: none;
 }
 
@@ -936,23 +946,13 @@ td .rowActionButton.danger:hover,
 }
 
 @keyframes modalFadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @keyframes modalPopIn {
-  from {
-    transform: scale(0.95);
-    opacity: 0;
-  }
-  to {
-    transform: scale(1);
-    opacity: 1;
-  }
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
 }
 
 /* ==========================================================================

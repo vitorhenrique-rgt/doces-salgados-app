@@ -1,8 +1,11 @@
 // js/pages/products.js
 //
-// Orquestra a tela de produtos: cadastro/edição (sem mexer em estoque),
-// listagem, exclusão, e a ação separada de "Repor estoque" — que é um
-// mini-formulário que aparece embutido na própria linha da tabela.
+// Esta página orquestra a tela de produtos, que tem DUAS "visões" na mesma
+// página HTML: a LISTA (com busca) e o FORMULÁRIO (criar/editar, sem mexer
+// em estoque). Só uma aparece por vez — alternamos entre elas escondendo/
+// mostrando os blocos com o atributo "hidden". A ação de "Repor estoque"
+// é separada: abre um mini-formulário embutido dentro da própria lista,
+// logo abaixo do produto (mesma ideia que já usávamos na tabela antiga).
 
 import {
   listProducts,
@@ -14,8 +17,17 @@ import {
 import { showConfirmModal } from '../components/confirmModal.js';
 import { iconEdit, iconPlus, iconTrash, actionButtonContent } from '../components/icons.js';
 import { enforceIntegerString } from '../utils/inputMasks.js';
+import { normalizeText } from '../utils/textSearch.js';
+import { formatCurrency } from '../utils/formatCurrency.js';
 
 // ---- Referências aos elementos do HTML ----
+const listViewEl = document.getElementById('listView');
+const formViewEl = document.getElementById('formView');
+const formTitleEl = document.getElementById('formTitle');
+const newProductButton = document.getElementById('newProductButton');
+const searchInput = document.getElementById('productSearch');
+const productListEl = document.getElementById('productList');
+
 const formEl = document.getElementById('productForm');
 const productIdInput = document.getElementById('productId');
 const nameInput = document.getElementById('productName');
@@ -25,7 +37,12 @@ const initialStockInput = document.getElementById('productInitialStock');
 const initialStockFieldEl = document.getElementById('initialStockField');
 const cancelEditButton = document.getElementById('cancelEditButton');
 const formMessageEl = document.getElementById('formMessage');
-const tableBodyEl = document.getElementById('productTableBody');
+
+// ---- Estado da tela em memória ----
+// "allProducts" guarda a lista completa, carregada do banco. O filtro de
+// busca trabalha em cima desse array (sem consultar o Supabase a cada
+// letra digitada).
+let allProducts = [];
 
 // ---- Máscara do campo de estoque inicial ----
 //
@@ -49,36 +66,69 @@ function clearFormMessage() {
   formMessageEl.className = '';
 }
 
-// ---- Alternar entre "modo criar" e "modo editar" ----
+// ---- Alternar entre as duas visões (lista <-> formulário) ----
 
+function showListView() {
+  listViewEl.hidden = false;
+  formViewEl.hidden = true;
+}
+
+function showFormView() {
+  listViewEl.hidden = true;
+  formViewEl.hidden = false;
+  // Ao trocar de visão, a página pode estar rolada lá embaixo (ex: o
+  // usuário clicou em "Editar" no fim de uma lista longa) — voltamos ao
+  // topo para o formulário aparecer inteiro.
+  window.scrollTo(0, 0);
+}
+
+// Abre o formulário vazio, para cadastrar um produto novo
+function enterCreateMode() {
+  formEl.reset();
+  productIdInput.value = '';
+  formTitleEl.textContent = 'Novo produto';
+  // Ao criar, o campo de estoque inicial aparece — é o único momento em
+  // que o formulário pode definir stock_quantity diretamente.
+  initialStockFieldEl.hidden = false;
+  clearFormMessage();
+  showFormView();
+  nameInput.focus();
+}
+
+// Abre o formulário preenchido com os dados de um produto existente
 function enterEditMode(product) {
   productIdInput.value = product.id;
   nameInput.value = product.name;
   salePriceInput.value = product.sale_price;
   categoryInput.value = product.category ?? '';
-  cancelEditButton.hidden = false;
+  formTitleEl.textContent = 'Editar produto';
 
   // Ao editar, escondemos o campo de estoque inicial — reposição de
-  // estoque é feita separadamente, direto na lista (ver handleRestockClick).
+  // estoque é feita separadamente, direto na lista (ver openRestockRow).
+  // Isso evita que o usuário apague o estoque atual sem querer ao editar
+  // só o nome ou o preço.
   initialStockFieldEl.hidden = true;
+
+  clearFormMessage();
+  showFormView();
+  nameInput.focus();
 }
 
-function exitEditMode() {
+// Fecha o formulário e volta para a lista (usado ao salvar e ao cancelar)
+function exitFormView() {
   formEl.reset();
   productIdInput.value = '';
-  cancelEditButton.hidden = true;
-
-  // Volta a mostrar o campo de estoque inicial, já que agora o formulário
-  // está pronto para cadastrar um produto novo de novo.
-  initialStockFieldEl.hidden = false;
+  showListView();
 }
 
+newProductButton.addEventListener('click', enterCreateMode);
+
 cancelEditButton.addEventListener('click', () => {
-  exitEditMode();
+  exitFormView();
   clearFormMessage();
 });
 
-// ---- Carregar e desenhar a lista de produtos ----
+// ---- Carregar os produtos do banco ----
 
 async function loadProducts() {
   const { data: products, error } = await listProducts();
@@ -89,88 +139,139 @@ async function loadProducts() {
     return;
   }
 
-  renderProductTable(products);
+  allProducts = products;
+  renderProductList();
 }
 
-function renderProductTable(products) {
-  tableBodyEl.innerHTML = '';
+// ---- Filtro de busca ----
 
+// Devolve só os produtos que combinam com o que está digitado na busca.
+// Busca em nome e categoria (não faz sentido buscar por preço/estoque aqui).
+function getFilteredProducts() {
+  const rawTerm = searchInput.value.trim();
+
+  if (rawTerm === '') {
+    return allProducts;
+  }
+
+  const term = normalizeText(rawTerm);
+
+  return allProducts.filter((product) => {
+    const nameMatches = normalizeText(product.name).includes(term);
+    const categoryMatches = normalizeText(product.category ?? '').includes(term);
+
+    return nameMatches || categoryMatches;
+  });
+}
+
+// A cada letra digitada, desenhamos a lista de novo já filtrada
+searchInput.addEventListener('input', renderProductList);
+
+// ---- Desenhar a lista de produtos (cards) ----
+
+function renderProductList() {
+  // Limpa a lista antes de desenhar de novo, para não duplicar itens
+  productListEl.innerHTML = '';
+
+  // Estado vazio 1: nenhum produto cadastrado ainda
+  if (allProducts.length === 0) {
+    const emptyItem = document.createElement('li');
+    emptyItem.className = 'emptyState';
+    emptyItem.textContent =
+      'Você ainda não cadastrou nenhum produto. Toque em "Novo produto" para cadastrar o primeiro.';
+    productListEl.appendChild(emptyItem);
+    return;
+  }
+
+  const products = getFilteredProducts();
+
+  // Estado vazio 2: existem produtos, mas nenhum combina com a busca
   if (products.length === 0) {
-    const emptyRow = document.createElement('tr');
-    emptyRow.innerHTML = `
-      <td colspan="5" class="emptyState">
-        Você ainda não cadastrou nenhum produto. Use o formulário acima para cadastrar o primeiro.
-      </td>
-    `;
-    tableBodyEl.appendChild(emptyRow);
+    const emptyItem = document.createElement('li');
+    emptyItem.className = 'emptyState';
+    emptyItem.textContent = 'Nenhum produto encontrado para essa busca.';
+    productListEl.appendChild(emptyItem);
     return;
   }
 
   for (const product of products) {
-    const row = document.createElement('tr');
+    const item = document.createElement('li');
+    item.className = 'recordItem';
 
-    row.innerHTML = `
-      <td>${product.name}</td>
-      <td>${product.category ?? ''}</td>
-      <td>R$ ${Number(product.sale_price).toFixed(2)}</td>
-      <td class="stockValue">${product.stock_quantity}</td>
-      <td>
+    // Categoria só aparece se existir — evita "undefined" ou uma linha
+    // vazia em produtos sem categoria definida.
+    const categoryHtml = product.category
+      ? `<span class="recordDetail">${product.category}</span>`
+      : '';
+
+    // Preço e estoque ficam na segunda coluna (equivalente ao "endereço"
+    // no padrão de Clientes), cada um em sua própria linha — sem separador
+    // entre eles, para não gastar espaço horizontal à toa no mobile.
+    item.innerHTML = `
+      <div class="recordInfo">
+        <div class="recordPrimary">
+          <span class="recordTitle">${product.name}</span>
+          ${categoryHtml}
+        </div>
+        <div class="recordSecondary">
+          <span class="recordDetail">${formatCurrency(product.sale_price)}</span>
+          <span class="recordDetail stockValue">${product.stock_quantity} un.</span>
+        </div>
+      </div>
+      <div class="recordActions">
         <button type="button" class="rowActionButton" data-action="edit">
           ${actionButtonContent(iconEdit, 'Editar')}
         </button>
         <button type="button" class="rowActionButton" data-action="restock">
-          ${actionButtonContent(iconPlus, 'Repor estoque')}
+          ${actionButtonContent(iconPlus, 'Estoque')}
         </button>
         <button type="button" class="rowActionButton danger" data-action="delete">
           ${actionButtonContent(iconTrash, 'Excluir')}
         </button>
-      </td>
+      </div>
     `;
 
-    row.querySelector('[data-action="edit"]').addEventListener('click', () => {
+    item.querySelector('[data-action="edit"]').addEventListener('click', () => {
       enterEditMode(product);
-      clearFormMessage();
     });
 
-    row.querySelector('[data-action="delete"]').addEventListener('click', () => {
+    item.querySelector('[data-action="delete"]').addEventListener('click', () => {
       handleDeleteProduct(product);
     });
 
-    row.querySelector('[data-action="restock"]').addEventListener('click', () => {
-      openRestockRow(product, row);
+    item.querySelector('[data-action="restock"]').addEventListener('click', () => {
+      openRestockRow(product, item);
     });
 
-    tableBodyEl.appendChild(row);
+    productListEl.appendChild(item);
   }
 }
 
-// ---- Reposição de estoque (formulário inline embaixo da linha do produto) ----
+// ---- Reposição de estoque (item inline logo abaixo do produto na lista) ----
 
-function openRestockRow(product, productRow) {
+function openRestockRow(product, productItemEl) {
   // Antes de abrir uma nova, fecha qualquer linha de reposição que já
   // esteja aberta — evita ter dois formulários de reposição abertos ao
   // mesmo tempo, o que confundiria qual produto está sendo alterado.
   closeAnyOpenRestockRow();
 
-  const restockRow = document.createElement('tr');
-  restockRow.className = 'restockRow';
-  restockRow.innerHTML = `
-    <td colspan="5">
-      <form class="restockForm">
-        <label for="restockAmount-${product.id}">Repor estoque de "${product.name}" — quantidade produzida:</label>
-        <input type="number" id="restockAmount-${product.id}" min="1" step="1" required />
-        <button type="submit" class="confirmRestockButton">Confirmar</button>
-        <button type="button" class="cancelRestockButton">Cancelar</button>
-      </form>
-    </td>
+  const restockItem = document.createElement('li');
+  restockItem.className = 'restockRow';
+  restockItem.innerHTML = `
+    <form class="restockForm">
+      <label for="restockAmount-${product.id}">Repor estoque de "${product.name}" — quantidade produzida:</label>
+      <input type="number" id="restockAmount-${product.id}" min="1" step="1" required />
+      <button type="submit" class="confirmRestockButton">Confirmar</button>
+      <button type="button" class="cancelRestockButton">Cancelar</button>
+    </form>
   `;
 
-  // Insere a linha de reposição logo depois da linha do produto
-  productRow.after(restockRow);
+  // Insere o item de reposição logo depois do item do produto
+  productItemEl.after(restockItem);
 
-  const restockFormEl = restockRow.querySelector('.restockForm');
-  const amountInput = restockRow.querySelector('input[type="number"]');
-  const cancelButton = restockRow.querySelector('.cancelRestockButton');
+  const restockFormEl = restockItem.querySelector('.restockForm');
+  const amountInput = restockItem.querySelector('input[type="number"]');
+  const cancelButton = restockItem.querySelector('.cancelRestockButton');
 
   amountInput.focus();
 
@@ -183,7 +284,7 @@ function openRestockRow(product, productRow) {
   });
 
   cancelButton.addEventListener('click', () => {
-    restockRow.remove();
+    restockItem.remove();
   });
 
   restockFormEl.addEventListener('submit', async (event) => {
@@ -205,7 +306,7 @@ function openRestockRow(product, productRow) {
 }
 
 function closeAnyOpenRestockRow() {
-  const existingRow = tableBodyEl.querySelector('.restockRow');
+  const existingRow = productListEl.querySelector('.restockRow');
   if (existingRow) {
     existingRow.remove();
   }
@@ -259,6 +360,7 @@ formEl.addEventListener('submit', async (event) => {
       return;
     }
 
+    exitFormView();
     showFormMessage('Produto atualizado com sucesso.', 'success');
   } else {
     // Modo criação: inclui o estoque inicial
@@ -277,10 +379,10 @@ formEl.addEventListener('submit', async (event) => {
       return;
     }
 
+    exitFormView();
     showFormMessage('Produto cadastrado com sucesso.', 'success');
   }
 
-  exitEditMode();
   loadProducts();
 });
 
