@@ -4,38 +4,39 @@
    ========================================================================== */
 :root {
   /* Base */
-  --color-background: #FBF1EA;      /* fundo geral, blush claro — não branco puro */
-  --color-surface: #FFFFFF;         /* cards, formulários, tabelas */
-  --color-surface-alt: #F6E4D8;     /* blocos de destaque suave, hover de linha de tabela */
+  --color-background: #fbf1ea; /* fundo geral, blush claro — não branco puro */
+  --color-surface: #ffffff; /* cards, formulários, tabelas */
+  --color-surface-alt: #f6e4d8; /* blocos de destaque suave, hover de linha de tabela */
 
   /* Texto */
-  --color-text: #3B2A22;            /* marrom-chocolate escuro, títulos e texto principal */
-  --color-text-muted: #7A6459;      /* texto secundário, labels, legendas */
+  --color-text: #3b2a22; /* marrom-chocolate escuro, títulos e texto principal */
+  --color-text-muted: #7a6459; /* texto secundário, labels, legendas */
 
   /* Marca / ação primária */
-  --color-primary: #A6334F;         /* vinho/berry — botões primários, links, destaques */
-  --color-primary-hover: #8A2A41;   /* hover/active do primário */
-  --color-primary-soft: #F3D9DF;    /* fundo suave para badges/alertas na cor primária */
+  --color-primary: #a6334f; /* vinho/berry — botões primários, links, destaques */
+  --color-primary-hover: #8a2a41; /* hover/active do primário */
+  --color-primary-soft: #f3d9df; /* fundo suave para badges/alertas na cor primária */
 
   /* Acento secundário */
-  --color-gold: #B8912F;            /* dourado — usar com moderação */
+  --color-gold: #b8912f; /* dourado — usar com moderação */
 
   /* Status (usaremos mais pra frente, na tela de vendas/fiado) */
-  --color-success: #4C7A50;
-  --color-success-soft: #E1EDE1;
-  --color-warning: #B9852F;
-  --color-warning-soft: #F5E6CC;
-  --color-danger: #9B3A3A;
-  --color-danger-soft: #F3DCDC;
-  --color-danger-hover: #7F2F2F;
+  --color-success: #4c7a50;
+  --color-success-soft: #e1ede1;
+  --color-warning: #b9852f;
+  --color-warning-soft: #f5e6cc;
+  --color-danger: #9b3a3a;
+  --color-danger-soft: #f3dcdc;
+  --color-danger-hover: #7f2f2f;
 
   /* Bordas e sombra */
-  --color-border: #E8D5C8;
+  --color-border: #e8d5c8;
   --shadow-soft: 0 2px 10px rgba(59, 42, 34, 0.08);
 
   /* Tipografia */
-  --font-display: 'Fraunces', Georgia, serif; /* títulos */
-  --font-ui: 'Inter', -apple-system, sans-serif; /* texto de interface e dados */
+  --font-display: "Fraunces", Georgia, serif; /* títulos */
+  --font-ui:
+    "Inter", -apple-system, sans-serif; /* texto de interface e dados */
 
   --text-xs: 0.75rem;
   --text-sm: 0.9375rem;
@@ -257,7 +258,7 @@ button {
    em telas maiores (ver media query), volta a ser do tamanho do texto. */
 button[type="submit"] {
   background: var(--color-primary);
-  color: #FFFFFF;
+  color: #ffffff;
   border: none;
   width: 100%;
 }
@@ -419,7 +420,7 @@ td .rowActionButton.danger:hover,
    único destaque de cor sólida desta tela. */
 .primaryButton {
   background: var(--color-primary);
-  color: #FFFFFF;
+  color: #ffffff;
   border: none;
   width: 100%;
 }
@@ -434,6 +435,30 @@ td .rowActionButton.danger:hover,
 #productSearch,
 #saleSearch {
   margin-bottom: 1rem;
+}
+
+/* ---- Filtros da lista de Vendas (cliente, período, situação) ----
+   Empilhados no mobile (igual a qualquer formulário desta interface);
+   viram uma linha a partir de 480px, já que os três campos são
+   relativamente curtos e cabem lado a lado em telas maiores. */
+.filtersWrapper {
+  margin-bottom: 1rem;
+}
+
+.filterRow {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.filterField {
+  display: flex;
+  flex-direction: column;
+}
+
+.filterField label {
+  margin-bottom: 0.25rem;
 }
 
 /* A lista de registros em si — sem marcadores de "<li>", sem sombra
@@ -538,7 +563,7 @@ td .rowActionButton.danger:hover,
 /* Botão de confirmar reposição: reaproveita o estilo do botão primário */
 .restockForm .confirmRestockButton {
   background: var(--color-primary);
-  color: #FFFFFF;
+  color: #ffffff;
   border: none;
 }
 
@@ -625,10 +650,60 @@ td .rowActionButton.danger:hover,
   background: transparent;
 }
 
-/* ---- Lista de itens adicionados à venda ---- */
+/* ---- Lista de itens adicionados à venda ----
+   Não é uma <table>: cada item é um <li>, porque no mobile ele precisa
+   quebrar em DUAS linhas (nome do produto em cima; quantidade, subtotal
+   e excluir embaixo) — colunas de tabela tradicionais ficariam espremidas
+   demais numa tela estreita. No desktop (ver media query de 480px),
+   volta a ser uma linha só. */
 
 .saleItemsWrapper {
   margin-top: 0.25rem;
+}
+
+.saleItemsList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.saleItemRow {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 0.85rem 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.saleItemsList .saleItemRow:last-child {
+  border-bottom: none;
+}
+
+.saleItemName {
+  font: 600 var(--text-base) var(--font-ui);
+  color: var(--color-text);
+}
+
+/* Segunda linha no mobile: quantidade e subtotal ficam juntos à
+   esquerda; o botão de excluir é empurrado pra direita com
+   margin-left: auto, mantendo o padrão de "ações sempre à direita" já
+   usado no resto da interface. flex-wrap permite que, numa tela muito
+   estreita, o conjunto quebre em vez de estourar a largura. */
+.saleItemControls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.saleItemControls .removeItemButton {
+  margin-left: auto;
+}
+
+.saleItemSubtotal {
+  font: 600 var(--text-sm) var(--font-ui);
+  color: var(--color-text);
+  white-space: nowrap;
 }
 
 /* Controle de quantidade com botões +/- — pensado para toque no celular,
@@ -789,6 +864,111 @@ td .rowActionButton.danger:hover,
   margin-top: 0.6rem;
 }
 
+/* ---- Lista de vendas em telas estreitas: duas linhas por venda ----
+   A tabela de vendas continua sendo uma <table> de verdade (a skill de
+   estilo visual mantém esse padrão para Vendas/A Receber, por causa da
+   ação de expandir detalhe por linha) — mas abaixo de 576px, mesmo com
+   scroll horizontal, os botões de ação podem ficar fora da área visível
+   sem o usuário perceber. Em vez de trocar a tabela por uma lista (como
+   fizemos em Clientes/Produtos), aqui só REORGANIZAMOS visualmente as
+   células com CSS Grid: cada linha de venda (.saleRow) vira um grid de
+   2 linhas x 3 colunas (data/total | cliente/situação | ação), sem
+   perder a marcação semântica de tabela. A linha de detalhes expandidos
+   (.saleDetailsRow) não entra nesse grid — continua um bloco único. */
+@media (max-width: 576px) {
+  /* Com a tabela virando um grid de 2 linhas por venda, o conteúdo já
+     cabe na largura da tela — não precisa mais de scroll horizontal
+     (que era, inclusive, o problema original a ser resolvido). Escopado
+     só ao wrapper de Vendas (.salesTableWrapper), não a .tableScroll em
+     geral, para não afetar outras tabelas do projeto (ex: A Receber). */
+  .salesTableWrapper {
+    overflow-x: visible;
+  }
+
+  #salesTable thead {
+    display: none;
+  }
+
+  #salesTable,
+  #salesTable tbody {
+    display: block;
+    width: 100%;
+  }
+
+  #salesTable tr.saleRow {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    grid-template-areas:
+      "date     customer action"
+      "total    status   action";
+    column-gap: 0.75rem;
+    row-gap: 0.3rem;
+    align-items: center;
+    padding: 0.85rem 0;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  #salesTable tr.saleRow td {
+    padding: 0;
+    border-bottom: none;
+  }
+
+  #salesTable tr.saleRow td:nth-child(1) {
+    grid-area: date;
+    font: 400 var(--text-sm) var(--font-ui);
+    color: var(--color-text-muted);
+  }
+
+  #salesTable tr.saleRow td:nth-child(2) {
+    grid-area: customer;
+    font: 600 var(--text-base) var(--font-ui);
+    color: var(--color-text);
+  }
+
+  #salesTable tr.saleRow td:nth-child(3) {
+    grid-area: total;
+    font: 600 var(--text-sm) var(--font-ui);
+  }
+
+  #salesTable tr.saleRow td:nth-child(4) {
+    grid-area: status;
+  }
+
+  #salesTable tr.saleRow td:nth-child(5) {
+    grid-area: action;
+    grid-row: 1 / span 2;
+    align-self: center;
+    justify-self: end;
+  }
+
+  /* A linha de detalhes (itens + pagamentos) continua um bloco único,
+     ocupando a largura toda — ela não faz parte do grid acima. */
+  #salesTable tr.saleDetailsRow {
+    display: block;
+  }
+
+  #salesTable tr.saleDetailsRow td {
+    display: block;
+    padding: 1rem;
+  }
+
+  /* Nomes de produto longos na lista de itens da venda truncam com "..."
+     em vez de empurrar o subtotal para fora da área visível ou quebrar
+     linha de forma feia — o preço precisa continuar sempre legível. */
+  .saleDetailsContent li span:first-child {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-right: 0.5rem;
+  }
+
+  .saleDetailsContent li span:last-child {
+    flex-shrink: 0;
+  }
+}
+
 /* ==========================================================================
    Tela de Controle de Fiado
    ========================================================================== */
@@ -863,7 +1043,7 @@ td .rowActionButton.danger:hover,
 
 .paymentForm .confirmPaymentButton {
   background: var(--color-primary);
-  color: #FFFFFF;
+  color: #ffffff;
   border: none;
 }
 
@@ -884,7 +1064,12 @@ td .rowActionButton.danger:hover,
 .modalOverlay {
   position: fixed;
   inset: 0;
-  background: rgba(59, 42, 34, 0.45); /* marrom-texto com transparência, mais harmônico que preto puro */
+  background: rgba(
+    59,
+    42,
+    34,
+    0.45
+  ); /* marrom-texto com transparência, mais harmônico que preto puro */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -929,7 +1114,7 @@ td .rowActionButton.danger:hover,
 
 .modalConfirmButton {
   background: var(--color-primary);
-  color: #FFFFFF;
+  color: #ffffff;
   border: none;
 }
 
@@ -946,13 +1131,23 @@ td .rowActionButton.danger:hover,
 }
 
 @keyframes modalFadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes modalPopIn {
-  from { transform: scale(0.95); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 /* ==========================================================================
@@ -1049,6 +1244,29 @@ td .rowActionButton.danger:hover,
   }
 
   .recordAddress {
+    flex: 1;
+  }
+
+  /* Filtros de Vendas: de empilhados (mobile) para uma linha horizontal,
+     já que De/Até/Situação são campos curtos e sobra espaço lado a lado. */
+  .filterRow {
+    flex-direction: row;
+  }
+
+  .filterField {
+    flex: 1;
+  }
+
+  /* Item da venda: volta a ser uma linha só (nome + controles lado a
+     lado), igual ao formato de tabela que já existia antes. */
+  .saleItemRow {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .saleItemName {
     flex: 1;
   }
 }
