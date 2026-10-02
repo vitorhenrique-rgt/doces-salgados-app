@@ -1,121 +1,178 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-br">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Registrar Venda</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css" />
-</head>
-<body>
-  <div id="mainNav"></div>
-  <main>
-    <h1>Registrar Venda</h1>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vendas</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <div id="mainNav"></div>
+    <main>
+      <h1>Vendas</h1>
 
-    <section>
-      <form id="saleForm">
-        <!-- ---- Cliente e data ---- -->
-        <label for="saleCustomer">Cliente</label>
-        <select id="saleCustomer" required>
-          <option value="" disabled selected>Selecione o cliente</option>
-          <!-- As opções de cliente serão inseridas aqui via JavaScript -->
-        </select>
+      <!-- Mensagens de erro ou sucesso ficam FORA das duas visões, no topo:
+         assim aparecem tanto na lista quanto no formulário de nova venda. -->
+      <p id="formMessage"></p>
 
-        <label for="saleDate">Data da venda</label>
-        <input type="date" id="saleDate" required />
+      <!-- ==== Visão 1: LISTA de vendas com filtros (é a que aparece ao abrir a página) ==== -->
+      <div id="listView">
+        <section>
+          <div class="listHeader">
+            <h2>Vendas registradas</h2>
+            <button type="button" id="newSaleButton" class="primaryButton">
+              Nova venda
+            </button>
+          </div>
 
-        <!-- ---- Busca de produtos (autocomplete simples) ---- -->
-        <label for="productSearchInput">Adicionar produto</label>
-        <div class="productSearchWrapper">
-          <input
-            type="text"
-            id="productSearchInput"
-            placeholder="Digite o nome do produto..."
-            autocomplete="off"
-          />
-          <!-- Lista de sugestões que aparece conforme o usuário digita.
-               Começa vazia/escondida e é preenchida via JavaScript. -->
-          <ul id="productSearchResults" class="productSearchResults" hidden></ul>
-        </div>
+          <!-- ---- Filtros: cliente (texto), período (data) e situação ---- -->
+          <div class="filtersWrapper">
+            <label for="saleSearch">Buscar por cliente</label>
+            <input
+              type="search"
+              id="saleSearch"
+              placeholder="Nome do cliente"
+              autocomplete="off"
+            />
 
-        <!-- ---- Itens já adicionados à venda ---- -->
-        <div class="saleItemsWrapper">
-          <div class="tableScroll">
-            <table id="saleItemsTable">
+            <div class="filterRow">
+              <div class="filterField">
+                <label for="saleDateFrom">De</label>
+                <input type="date" id="saleDateFrom" />
+              </div>
+              <div class="filterField">
+                <label for="saleDateTo">Até</label>
+                <input type="date" id="saleDateTo" />
+              </div>
+              <div class="filterField">
+                <label for="saleStatusFilter">Situação</label>
+                <select id="saleStatusFilter">
+                  <option value="">Todas</option>
+                  <option value="paid">Pago</option>
+                  <option value="partial">Parcial</option>
+                  <option value="credit">A receber</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- A lista de vendas continua sendo uma <table>, conforme a skill
+             de estilo visual: Vendas já tem uma ação de expandir detalhe
+             por linha, o que funciona melhor em tabela do que em cards. -->
+          <div class="tableScroll salesTableWrapper">
+            <table id="salesTable">
               <thead>
                 <tr>
-                  <th>Produto</th>
-                  <th>Qtd.</th>
-                  <th>Subtotal</th>
+                  <th>Data</th>
+                  <th>Cliente</th>
+                  <th>Total</th>
+                  <th>Situação</th>
                   <th></th>
                 </tr>
               </thead>
-              <tbody id="saleItemsTableBody">
-                <!-- Linhas inseridas via JavaScript conforme produtos são adicionados -->
+              <tbody id="salesTableBody">
+                <!-- As linhas de venda serão inseridas aqui via JavaScript -->
               </tbody>
             </table>
           </div>
-          <p id="noItemsMessage" class="emptyState">
-            Nenhum produto adicionado ainda. Use a busca acima para adicionar o primeiro.
-          </p>
-        </div>
-
-        <!-- ---- Total da venda (calculado automaticamente) ---- -->
-        <div class="saleTotalRow">
-          <span class="saleTotalLabel">Total da venda</span>
-          <span class="saleTotalValue" id="saleTotalValue">R$ 0,00</span>
-        </div>
-
-        <!-- ---- Forma de pagamento ---- -->
-        <label for="paymentMethodSelect">Forma de pagamento</label>
-        <select id="paymentMethodSelect" required>
-          <option value="cash">Dinheiro</option>
-          <option value="pix">Pix</option>
-          <option value="card">Cartão</option>
-          <option value="credit">A receber</option>
-        </select>
-
-        <!-- Só aparece quando a forma de pagamento NÃO é "A receber".
-             Se o campo ficar em branco, entendemos que o valor recebido
-             foi o total da venda (pagamento completo). Se for preenchido
-             com um valor menor que o total, o restante fica em aberto
-             com situação "parcial". -->
-        <div id="amountReceivedField">
-          <label for="amountReceivedInput">Valor recebido agora</label>
-          <input type="number" id="amountReceivedInput" step="0.01" min="0" placeholder="Deixe em branco para pagamento total" />
-        </div>
-
-        <button type="submit">Registrar venda</button>
-      </form>
-
-      <p id="formMessage"></p>
-    </section>
-
-    <!-- Lista de vendas já registradas -->
-    <section>
-      <h2>Vendas registradas</h2>
-      <div class="tableScroll">
-        <table id="salesTable">
-          <thead>
-            <tr>
-              <th>Data</th>
-              <th>Cliente</th>
-              <th>Total</th>
-              <th>Situação</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody id="salesTableBody">
-            <!-- As linhas de venda serão inseridas aqui via JavaScript -->
-          </tbody>
-        </table>
+        </section>
       </div>
-    </section>
-  </main>
 
-  <script type="module" src="js/components/nav.js"></script>
-  <script type="module" src="js/pages/sales.js"></script>
-</body>
+      <!-- ==== Visão 2: FORMULÁRIO de nova venda (começa escondida) ==== -->
+      <div id="formView" hidden>
+        <section>
+          <h2>Nova venda</h2>
+          <form id="saleForm">
+            <!-- ---- Cliente e data ---- -->
+            <label for="saleCustomer">Cliente</label>
+            <select id="saleCustomer" required>
+              <option value="" disabled selected>Selecione o cliente</option>
+              <!-- As opções de cliente serão inseridas aqui via JavaScript -->
+            </select>
+
+            <label for="saleDate">Data da venda</label>
+            <input type="date" id="saleDate" required />
+
+            <!-- ---- Busca de produtos (autocomplete simples) ---- -->
+            <label for="productSearchInput">Adicionar produto</label>
+            <div class="productSearchWrapper">
+              <input
+                type="text"
+                id="productSearchInput"
+                placeholder="Digite o nome do produto..."
+                autocomplete="off"
+              />
+              <!-- Lista de sugestões que aparece conforme o usuário digita.
+                 Começa vazia/escondida e é preenchida via JavaScript. -->
+              <ul
+                id="productSearchResults"
+                class="productSearchResults"
+                hidden
+              ></ul>
+            </div>
+
+            <!-- ---- Itens já adicionados à venda ----
+               Não é mais uma <table>: no mobile, cada item quebra em duas
+               linhas (nome em cima, controles embaixo) para não espremer
+               colunas numa tela estreita; no desktop, vira uma linha só,
+               parecido com o que já era antes (ver CSS: .saleItemRow). -->
+            <div class="saleItemsWrapper">
+              <ul id="saleItemsList" class="saleItemsList">
+                <!-- Itens inseridos via JavaScript conforme produtos são adicionados -->
+              </ul>
+              <p id="noItemsMessage" class="emptyState">
+                Nenhum produto adicionado ainda. Use a busca acima para
+                adicionar o primeiro.
+              </p>
+            </div>
+
+            <!-- ---- Total da venda (calculado automaticamente) ---- -->
+            <div class="saleTotalRow">
+              <span class="saleTotalLabel">Total da venda</span>
+              <span class="saleTotalValue" id="saleTotalValue">R$ 0,00</span>
+            </div>
+
+            <!-- ---- Forma de pagamento ---- -->
+            <label for="paymentMethodSelect">Forma de pagamento</label>
+            <select id="paymentMethodSelect" required>
+              <option value="cash">Dinheiro</option>
+              <option value="pix">Pix</option>
+              <option value="card">Cartão</option>
+              <option value="credit">A receber</option>
+            </select>
+
+            <!-- Só aparece quando a forma de pagamento NÃO é "A receber".
+               Se o campo ficar em branco, entendemos que o valor recebido
+               foi o total da venda (pagamento completo). Se for preenchido
+               com um valor menor que o total, o restante fica em aberto
+               com situação "parcial". -->
+            <div id="amountReceivedField">
+              <label for="amountReceivedInput">Valor recebido agora</label>
+              <input
+                type="number"
+                id="amountReceivedInput"
+                step="0.01"
+                min="0"
+                placeholder="Deixe em branco para pagamento total"
+              />
+            </div>
+
+            <div class="button-row">
+              <button type="submit">Registrar venda</button>
+              <button type="button" id="cancelEditButton">Cancelar</button>
+            </div>
+          </form>
+        </section>
+      </div>
+    </main>
+
+    <script type="module" src="js/components/nav.js"></script>
+    <script type="module" src="js/pages/sales.js"></script>
+  </body>
 </html>
