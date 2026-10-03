@@ -433,7 +433,8 @@ td .rowActionButton.danger:hover,
    para separar da lista de registros logo abaixo. */
 #customerSearch,
 #productSearch,
-#saleSearch {
+#saleSearch,
+#creditSearch {
   margin-bottom: 1rem;
 }
 
@@ -1163,55 +1164,44 @@ td .rowActionButton.danger:hover,
     width: auto;
   }
 
-  /* Formulários inline (reposição de estoque, pagamento) voltam a ficar
-     lado a lado e compactos — no mobile, ficam empilhados em largura
-     total (ver regras mobile-first acima) */
-  .restockForm,
-  .paymentForm {
+  /* Reposição de estoque: só 2 campos (quantidade + botão), cabe numa
+     linha só mesmo no desktop, sem desalinhar. */
+  .restockForm {
     flex-direction: row;
     align-items: center;
     flex-wrap: wrap;
   }
 
-  .restockForm label,
-  .paymentForm label {
+  .restockForm label {
     margin-bottom: 0;
     white-space: nowrap;
   }
 
-  .restockForm input[type="number"],
-  .paymentForm input[type="number"],
-  .paymentForm input[type="text"],
-  .paymentForm select {
-    width: auto;
+  .restockForm input[type="number"] {
+    width: 6rem;
     min-height: auto;
     padding: 0.4rem 0.6rem;
     font: 400 var(--text-sm) var(--font-ui);
   }
 
-  .restockForm input[type="number"],
-  .paymentForm input[type="number"] {
-    width: 6rem;
-  }
-
-  .paymentForm input[type="text"] {
-    width: 10rem;
-  }
-
   .restockForm .confirmRestockButton,
-  .restockForm .cancelRestockButton,
-  .paymentForm .confirmPaymentButton,
-  .paymentForm .cancelPaymentButton {
+  .restockForm .cancelRestockButton {
     width: auto;
     padding: 0.4rem 0.9rem;
     min-height: auto;
     font: 600 var(--text-sm) var(--font-ui);
   }
 
-  .restockForm .cancelRestockButton,
-  .paymentForm .cancelPaymentButton {
+  .restockForm .cancelRestockButton {
     font-weight: 500;
   }
+
+  /* Pagamento: 4 campos (valor, forma de pagamento, observação, botão) —
+     empilhado (label acima do input, campo embaixo do outro) em qualquer
+     largura de tela, igual aos formulários principais do projeto. Não
+     reaproveita o layout em linha do .restockForm porque, com campos
+     demais disputando espaço horizontal, o resultado desalinha (ver
+     skill doces-salgados-lembretes, ajuste de 2026-09-29). */
 
   /* Cabeçalho da lista: título e botão "Novo ..." lado a lado, botão
      com largura do próprio texto (não mais 100%) */
