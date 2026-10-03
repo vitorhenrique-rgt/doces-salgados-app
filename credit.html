@@ -1,40 +1,52 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-br">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>A Receber</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css" />
-</head>
-<body>
-  <div id="mainNav"></div>
-  <main>
-    <h1>A Receber</h1>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>A Receber</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <div id="mainNav"></div>
+    <main>
+      <h1>A Receber</h1>
 
-    <section>
-      <h2>Clientes com pendência</h2>
-      <div class="tableScroll">
-        <table id="creditTable">
-          <thead>
-            <tr>
-              <th>Cliente</th>
-              <th>Total devido</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody id="creditTableBody">
-            <!-- As linhas de cliente serão inseridas aqui via JavaScript -->
-          </tbody>
-        </table>
-      </div>
-      <p id="formMessage"></p>
-    </section>
-  </main>
+      <section>
+        <h2>Clientes com pendência</h2>
 
-  <script type="module" src="js/components/nav.js"></script>
-  <script type="module" src="js/pages/credit.js"></script>
-</body>
+        <label for="creditSearch">Buscar por cliente</label>
+        <input
+          type="search"
+          id="creditSearch"
+          placeholder="Nome do cliente"
+          autocomplete="off"
+        />
+
+        <div class="tableScroll">
+          <table id="creditTable">
+            <thead>
+              <tr>
+                <th>Cliente</th>
+                <th>Total devido</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="creditTableBody">
+              <!-- As linhas de cliente serão inseridas aqui via JavaScript -->
+            </tbody>
+          </table>
+        </div>
+        <p id="formMessage"></p>
+      </section>
+    </main>
+
+    <script type="module" src="js/components/nav.js"></script>
+    <script type="module" src="js/pages/credit.js"></script>
+  </body>
 </html>
