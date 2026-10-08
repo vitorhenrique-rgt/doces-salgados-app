@@ -13,6 +13,7 @@ import {
   updateProduct,
   deleteProduct,
   increaseStock,
+  setStock,
 } from '../services/productService.js';
 import { showConfirmModal } from '../components/confirmModal.js';
 import { iconEdit, iconPlus, iconTrash, actionButtonContent } from '../components/icons.js';
@@ -255,11 +256,28 @@ function openRestockRow(product, productItemEl) {
   // mesmo tempo, o que confundiria qual produto está sendo alterado.
   closeAnyOpenRestockRow();
 
+  // Dois modos no mesmo formulário: "Adicionar produzido" (soma ao estoque
+  // atual, é o comportamento original) e "Corrigir estoque atual"
+  // (sobrescreve para o valor exato digitado — usado quando uma reposição
+  // anterior foi registrada errada). O modo "add" começa marcado por
+  // padrão, para não mudar o comportamento de quem já está acostumado.
   const restockItem = document.createElement('li');
   restockItem.className = 'restockRow';
   restockItem.innerHTML = `
     <form class="restockForm">
-      <label for="restockAmount-${product.id}">Repor estoque de "${product.name}" — quantidade produzida:</label>
+      <div class="restockModeToggle">
+        <label class="restockModeOption">
+          <input type="radio" name="restockMode-${product.id}" value="add" checked />
+          Adicionar produzido
+        </label>
+        <label class="restockModeOption">
+          <input type="radio" name="restockMode-${product.id}" value="set" />
+          Corrigir estoque atual
+        </label>
+      </div>
+      <label for="restockAmount-${product.id}" id="restockLabel-${product.id}">
+        Repor estoque de "${product.name}" — quantidade produzida:
+      </label>
       <input type="number" id="restockAmount-${product.id}" min="1" step="1" required />
       <button type="submit" class="confirmRestockButton">Confirmar</button>
       <button type="button" class="cancelRestockButton">Cancelar</button>
@@ -270,6 +288,8 @@ function openRestockRow(product, productItemEl) {
   productItemEl.after(restockItem);
 
   const restockFormEl = restockItem.querySelector('.restockForm');
+  const modeRadios = restockItem.querySelectorAll('input[type="radio"]');
+  const labelEl = restockItem.querySelector(`#restockLabel-${product.id}`);
   const amountInput = restockItem.querySelector('input[type="number"]');
   const cancelButton = restockItem.querySelector('.cancelRestockButton');
 
@@ -283,6 +303,28 @@ function openRestockRow(product, productItemEl) {
     amountInput.value = enforceIntegerString(amountInput.value);
   });
 
+  // Ao trocar de modo, o texto do campo e as regras mudam: "Adicionar"
+  // pede uma quantidade produzida (mínimo 1, começa vazio); "Corrigir"
+  // pede o novo valor total do estoque (pode ser 0, e já vem preenchido
+  // com o estoque atual como ponto de partida, para o usuário só ajustar).
+  for (const radio of modeRadios) {
+    radio.addEventListener('change', () => {
+      const isSetMode = restockFormEl.querySelector('input[type="radio"]:checked').value === 'set';
+
+      if (isSetMode) {
+        labelEl.textContent = `Corrigir estoque de "${product.name}" para:`;
+        amountInput.min = '0';
+        amountInput.value = product.stock_quantity;
+      } else {
+        labelEl.textContent = `Repor estoque de "${product.name}" — quantidade produzida:`;
+        amountInput.min = '1';
+        amountInput.value = '';
+      }
+
+      amountInput.focus();
+    });
+  }
+
   cancelButton.addEventListener('click', () => {
     restockItem.remove();
   });
@@ -290,13 +332,17 @@ function openRestockRow(product, productItemEl) {
   restockFormEl.addEventListener('submit', async (event) => {
     event.preventDefault();
 
+    const mode = restockFormEl.querySelector('input[type="radio"]:checked').value;
     const amount = Number(amountInput.value);
 
-    const { error } = await increaseStock(product.id, amount);
+    // "add" soma ao estoque atual (increaseStock); "set" sobrescreve para
+    // o valor exato digitado (setStock) — ver productService.js.
+    const { error } =
+      mode === 'set' ? await setStock(product.id, amount) : await increaseStock(product.id, amount);
 
     if (error) {
       console.error(error);
-      showFormMessage('Não foi possível repor o estoque deste produto.', 'error');
+      showFormMessage('Não foi possível atualizar o estoque deste produto.', 'error');
       return;
     }
 

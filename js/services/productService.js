@@ -6,8 +6,7 @@
 //
 // Importante: este service é o "dono" do campo stock_quantity. Nenhum outro
 // arquivo do projeto deve alterar o estoque de um produto diretamente — sempre
-// através de increaseStock() ou decreaseStock() (esta última será usada pelo
-// saleService, quando chegarmos na tela de vendas).
+// através de increaseStock(), decreaseStock() ou setStock().
 
 import { supabase } from '../supabaseClient.js';
 
@@ -35,7 +34,7 @@ export async function getProductById(id) {
 // Cria um novo produto
 // product = { name, sale_price, category, stock_quantity }
 // stock_quantity aqui representa o ESTOQUE INICIAL, definido só no momento
-// da criação — depois disso, o estoque só muda via increaseStock/decreaseStock.
+// da criação — depois disso, o estoque só muda via increaseStock/decreaseStock/setStock.
 export async function createProduct(product) {
   const { data, error } = await supabase
     .from('products')
@@ -48,8 +47,8 @@ export async function createProduct(product) {
 // Atualiza os dados gerais de um produto (nome, preço, categoria).
 // Atenção: updatedFields NUNCA deve conter stock_quantity — a página de
 // produtos não deve permitir isso, para evitar que o usuário apague o
-// estoque sem querer ao editar outro campo. Reposição de estoque é uma
-// ação separada (ver increaseStock, abaixo).
+// estoque sem querer ao editar outro campo. Mudar o estoque é sempre uma
+// ação separada (ver increaseStock, decreaseStock e setStock, abaixo).
 export async function updateProduct(id, updatedFields) {
   const { data, error } = await supabase
     .from('products')
@@ -71,7 +70,8 @@ export async function deleteProduct(id) {
 }
 
 // Repõe estoque: soma "amount" ao estoque atual do produto.
-// Usado quando o usuário produz um novo lote (ação "Repor estoque" na tela).
+// Usado quando o usuário produz um novo lote (ação "Repor estoque" na tela,
+// modo "Adicionar produzido").
 export async function increaseStock(productId, amount) {
   const { data: product, error: fetchError } = await getProductById(productId);
   if (fetchError) return { data: null, error: fetchError };
@@ -88,14 +88,33 @@ export async function increaseStock(productId, amount) {
 }
 
 // Abate estoque: subtrai "amount" do estoque atual do produto.
-// Será chamado pelo saleService ao confirmar uma venda (item por item) —
-// ainda não usamos esta função até chegarmos na tela de vendas.
+// Chamado pelo saleService ao confirmar uma venda (item por item).
 export async function decreaseStock(productId, amount) {
   const { data: product, error: fetchError } = await getProductById(productId);
   if (fetchError) return { data: null, error: fetchError };
 
   const newQuantity = product.stock_quantity - amount;
 
+  const { data, error } = await supabase
+    .from('products')
+    .update({ stock_quantity: newQuantity })
+    .eq('id', productId)
+    .select();
+
+  return { data, error };
+}
+
+// Corrige o estoque para um valor exato, SOBRESCREVENDO o que estava lá —
+// diferente de increaseStock/decreaseStock, que somam ou subtraem em cima
+// do valor atual. Usado na ação "Repor estoque" na tela, modo "Corrigir
+// estoque atual", para quando o usuário errou uma reposição anterior e
+// precisa ajustar o número para o valor real, sem precisar calcular a
+// diferença na cabeça.
+//
+// Por decisão do usuário, essa correção não guarda histórico do valor
+// anterior — é uma sobrescrita simples, igual à edição de qualquer outro
+// campo do produto.
+export async function setStock(productId, newQuantity) {
   const { data, error } = await supabase
     .from('products')
     .update({ stock_quantity: newQuantity })
