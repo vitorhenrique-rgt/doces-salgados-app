@@ -10,11 +10,11 @@
 // sem DDI) e um texto. O wa.me exige o telefone com o código do país (55)
 // na frente, sem espaços, parênteses, hífen ou o sinal de "+".
 export function buildWhatsAppUrl(phoneDigits, message) {
-  const digits = (phoneDigits ?? '').replace(/\D/g, '');
+  const digits = (phoneDigits ?? "").replace(/\D/g, "")
 
   // Se o telefone já vier com o 55 na frente (ex: copiado de outro
   // lugar), não duplicamos o código do país.
-  const phoneWithCountryCode = digits.startsWith('55') ? digits : `55${digits}`;
+  const phoneWithCountryCode = digits.startsWith("55") ? digits : `55${digits}`
 
-  return `https://wa.me/${phoneWithCountryCode}?text=${encodeURIComponent(message)}`;
+  return `https://wa.me/${phoneWithCountryCode}?text=${encodeURIComponent(message)}`
 }
