@@ -4,21 +4,30 @@
    ========================================================================== */
 :root {
   /* Base */
-  --color-background: #FBF1EA;      /* fundo geral, blush claro — não branco puro */
-  --color-surface: #FFFFFF;         /* cards, formulários, tabelas */
-  --color-surface-alt: #F6E4D8;     /* blocos de destaque suave, hover de linha de tabela */
+  --color-background: #FBF1EA;
+  /* fundo geral, blush claro — não branco puro */
+  --color-surface: #FFFFFF;
+  /* cards, formulários, tabelas */
+  --color-surface-alt: #F6E4D8;
+  /* blocos de destaque suave, hover de linha de tabela */
 
   /* Texto */
-  --color-text: #3B2A22;            /* marrom-chocolate escuro, títulos e texto principal */
-  --color-text-muted: #7A6459;      /* texto secundário, labels, legendas */
+  --color-text: #3B2A22;
+  /* marrom-chocolate escuro, títulos e texto principal */
+  --color-text-muted: #7A6459;
+  /* texto secundário, labels, legendas */
 
   /* Marca / ação primária */
-  --color-primary: #A6334F;         /* vinho/berry — botões primários, links, destaques */
-  --color-primary-hover: #8A2A41;   /* hover/active do primário */
-  --color-primary-soft: #F3D9DF;    /* fundo suave para badges/alertas na cor primária */
+  --color-primary: #A6334F;
+  /* vinho/berry — botões primários, links, destaques */
+  --color-primary-hover: #8A2A41;
+  /* hover/active do primário */
+  --color-primary-soft: #F3D9DF;
+  /* fundo suave para badges/alertas na cor primária */
 
   /* Acento secundário */
-  --color-gold: #B8912F;            /* dourado — usar com moderação */
+  --color-gold: #B8912F;
+  /* dourado — usar com moderação */
 
   /* Status (usaremos mais pra frente, na tela de vendas/fiado) */
   --color-success: #4C7A50;
@@ -34,8 +43,10 @@
   --shadow-soft: 0 2px 10px rgba(59, 42, 34, 0.08);
 
   /* Tipografia */
-  --font-display: 'Fraunces', Georgia, serif; /* títulos */
-  --font-ui: 'Inter', -apple-system, sans-serif; /* texto de interface e dados */
+  --font-display: 'Fraunces', Georgia, serif;
+  /* títulos */
+  --font-ui: 'Inter', -apple-system, sans-serif;
+  /* texto de interface e dados */
 
   --text-xs: 0.75rem;
   --text-sm: 0.9375rem;
@@ -211,7 +222,8 @@ input[type="search"],
 select {
   width: 100%;
   padding: 0.75rem 0.85rem;
-  min-height: 2.75rem; /* ~44px — mesmo padrão de toque confortável dos botões */
+  min-height: 2.75rem;
+  /* ~44px — mesmo padrão de toque confortável dos botões */
   border: 1px solid var(--color-border);
   border-radius: 8px;
   font: 400 var(--text-base) var(--font-ui);
@@ -236,8 +248,8 @@ select:focus {
 
 /* Botões ficam empilhados por padrão no mobile (ocupando a largura toda,
    igual aos inputs); em telas maiores, ficam lado a lado (ver media query) */
-form > div.formButtons,
-form > .button-row {
+form>div.formButtons,
+form>.button-row {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
@@ -248,7 +260,8 @@ button {
   font: 600 var(--text-base) var(--font-ui);
   border-radius: 8px;
   padding: 0.75rem 1.25rem;
-  min-height: 2.75rem; /* ~44px — tamanho mínimo recomendado para toque confortável */
+  min-height: 2.75rem;
+  /* ~44px — tamanho mínimo recomendado para toque confortável */
 }
 
 /* Botão de salvar: único destaque de cor sólida na tela, conforme a regra
@@ -492,7 +505,8 @@ td .rowActionButton.danger:hover,
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
-  min-width: 0; /* permite que o texto quebre/trunque em vez de estourar a linha */
+  min-width: 0;
+  /* permite que o texto quebre/trunque em vez de estourar a linha */
 }
 
 /* Nome e telefone SEMPRE empilhados juntos (mesmo em telas grandes) — é o
@@ -728,10 +742,48 @@ td .rowActionButton.danger:hover,
   margin-left: auto;
 }
 
+/* O valor total do item é clicável para editar (ver js/pages/sales.js).
+   O padding + border-radius + hover dão a "pista" visual de que dá pra
+   clicar, sem precisar de um ícone extra — mesmo princípio de "ícones só
+   quando ajudam" da skill de estilo visual. */
 .saleItemSubtotal {
   font: 600 var(--text-sm) var(--font-ui);
   color: var(--color-text);
   white-space: nowrap;
+  cursor: pointer;
+  padding: 0.2rem 0.45rem;
+  border-radius: 6px;
+}
+
+.saleItemSubtotal:hover {
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+}
+
+.saleItemSubtotal:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+}
+
+/* O campo que substitui o valor total durante a edição — compacto,
+   parecido em tamanho com o qtyStepper ao lado, já que vive dentro de
+   uma linha estreita com vários outros controles. */
+.saleItemControls .saleItemSubtotalInput {
+  width: 5rem;
+  min-height: 2.25rem;
+  padding: 0.3rem 0.45rem;
+  border: 1.5px solid var(--color-primary);
+  border-radius: 6px;
+  font: 600 var(--text-sm) var(--font-ui);
+  color: var(--color-text);
+  background: var(--color-surface);
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.saleItemControls .saleItemSubtotalInput:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
 }
 
 /* Controle de quantidade com botões +/- — pensado para toque no celular,
@@ -904,6 +956,7 @@ td .rowActionButton.danger:hover,
    perder a marcação semântica de tabela. A linha de detalhes expandidos
    (.saleDetailsRow) não entra nesse grid — continua um bloco único. */
 @media (max-width: 576px) {
+
   /* Com a tabela virando um grid de 2 linhas por venda, o conteúdo já
      cabe na largura da tela — não precisa mais de scroll horizontal
      (que era, inclusive, o problema original a ser resolvido). Escopado
@@ -1092,7 +1145,8 @@ td .rowActionButton.danger:hover,
 .modalOverlay {
   position: fixed;
   inset: 0;
-  background: rgba(59, 42, 34, 0.45); /* marrom-texto com transparência, mais harmônico que preto puro */
+  background: rgba(59, 42, 34, 0.45);
+  /* marrom-texto com transparência, mais harmônico que preto puro */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1154,20 +1208,32 @@ td .rowActionButton.danger:hover,
 }
 
 @keyframes modalFadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes modalPopIn {
-  from { transform: scale(0.95); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 /* ==========================================================================
    Mobile-first: a partir daqui, ajustes para telas maiores
    ========================================================================== */
 @media (min-width: 480px) {
-  form > .button-row {
+  form>.button-row {
     flex-direction: row;
   }
 
