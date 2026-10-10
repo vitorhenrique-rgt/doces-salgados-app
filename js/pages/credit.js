@@ -13,8 +13,13 @@ import {
   payCustomerCredit,
 } from "../services/saleService.js"
 import { formatCurrency } from "../utils/formatCurrency.js"
-import { iconEye, actionButtonContent } from "../components/icons.js"
+import {
+  iconEye,
+  iconMessage,
+  actionButtonContent,
+} from "../components/icons.js"
 import { normalizeText } from "../utils/textSearch.js"
+import { buildWhatsAppUrl } from "../utils/whatsapp.js"
 
 const searchInput = document.getElementById("creditSearch")
 const tableBodyEl = document.getElementById("creditTableBody")
@@ -61,6 +66,7 @@ function groupSalesByCustomer(sales) {
       groupsByCustomerId[customerId] = {
         customerId,
         customerName: sale.customers?.name ?? "Cliente removido",
+        customerPhone: sale.customers?.phone ?? "",
         totalOwed: 0,
         sales: [],
       }
@@ -81,6 +87,92 @@ function groupSalesByCustomer(sales) {
   }
 
   return groups
+}
+
+// ---- Enviar o resumo do débito por WhatsApp ----
+
+// Largura de cada coluna da "tabela" da mensagem (em caracteres) — usado
+// com padEnd/padStart para montar o alinhamento manualmente.
+const CREDIT_MESSAGE_COLUMNS = {
+  date: 11,
+  total: 10,
+  balance: 12,
+}
+
+// Monta o texto da mensagem num formato parecido com um extrato: data da
+// venda, valor total dela e quanto ainda falta receber (pode ser menor
+// que o total, se já houve um pagamento parcial), uma linha por venda, e
+// o total geral no final.
+//
+// O trecho entre crase tripla (```) é o que faz o WhatsApp exibir esse
+// pedaço da mensagem em fonte monoespaçada (toda letra com a mesma
+// largura) — sem isso, as colunas não ficariam alinhadas de verdade na
+// tela, porque a fonte normal do WhatsApp é proporcional.
+function buildCreditMessage(customerGroup) {
+  const {
+    date: colDate,
+    total: colTotal,
+    balance: colBalance,
+  } = CREDIT_MESSAGE_COLUMNS
+
+  const header =
+    "Data".padEnd(colDate) +
+    "Total".padStart(colTotal) +
+    "A receber".padStart(colBalance)
+  const separador = "-".repeat(colDate + colTotal + colBalance)
+
+  const linhasVendas = customerGroup.sales
+    .map((sale) => {
+      const dataFormatada = formatDate(sale.sale_date)
+      const totalFormatado = formatCurrency(sale.total_amount)
+      const saldoFormatado = formatCurrency(sale.balance)
+
+      return (
+        dataFormatada.padEnd(colDate) +
+        totalFormatado.padStart(colTotal) +
+        saldoFormatado.padStart(colBalance)
+      )
+    })
+    .join("\n")
+
+  const linhaTotal =
+    "Total:".padEnd(colDate + colTotal) +
+    formatCurrency(customerGroup.totalOwed).padStart(colBalance)
+
+  const tabela = [
+    "```",
+    header,
+    separador,
+    linhasVendas,
+    separador,
+    linhaTotal,
+    "```",
+  ].join("\n")
+
+  return (
+    `Olá, ${customerGroup.customerName}! Aqui está um resumo do que está em aberto:\n\n` +
+    `${tabela}\n\n` +
+    `Qualquer dúvida, é só chamar!`
+  )
+}
+
+function handleSendWhatsApp(customerGroup) {
+  // Sem telefone cadastrado não tem como montar o link — avisamos em vez
+  // de abrir um WhatsApp "quebrado" sem destinatário nenhum.
+  if (!customerGroup.customerPhone) {
+    showFormMessage(
+      `${customerGroup.customerName} não tem telefone cadastrado — não é possível enviar pelo WhatsApp.`,
+      "error",
+    )
+    return
+  }
+
+  const message = buildCreditMessage(customerGroup)
+  const url = buildWhatsAppUrl(customerGroup.customerPhone, message)
+
+  // Abre em nova aba — o WhatsApp Web ou o app já carrega com a mensagem
+  // pronta, mas quem envia de fato é o usuário, conferindo antes.
+  window.open(url, "_blank")
 }
 
 // ---- Carregar e desenhar a lista de clientes com pendência ----
@@ -157,11 +249,20 @@ function renderCreditTable() {
       <td>${group.customerName}</td>
       <td class="creditTotalOwed">${formatCurrency(group.totalOwed)}</td>
       <td>
+        <button type="button" class="rowActionButton" data-action="whatsapp">
+          ${actionButtonContent(iconMessage, "WhatsApp")}
+        </button>
         <button type="button" class="rowActionButton" data-action="toggle">
           ${actionButtonContent(iconEye, "Ver detalhes")}
         </button>
       </td>
     `
+
+    row
+      .querySelector('[data-action="whatsapp"]')
+      .addEventListener("click", () => {
+        handleSendWhatsApp(group)
+      })
 
     row
       .querySelector('[data-action="toggle"]')

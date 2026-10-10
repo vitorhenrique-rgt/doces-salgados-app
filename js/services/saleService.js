@@ -7,30 +7,32 @@
 // em stock_quantity diretamente, pois quem é "dono" dessa coluna é o
 // productService (ver skill doces-salgados-camada-servico).
 
-import { supabase } from '../supabaseClient.js';
-import { decreaseStock } from './productService.js';
+import { supabase } from "../supabaseClient.js"
+import { decreaseStock } from "./productService.js"
 
 // Busca todas as vendas, já trazendo o nome do cliente junto (join automático,
 // possível porque sales.customer_id já referencia customers.id no banco)
 export async function listSales() {
   const { data, error } = await supabase
-    .from('sales')
-    .select('*, customers(name)')
-    .order('sale_date', { ascending: false });
+    .from("sales")
+    .select("*, customers(name)")
+    .order("sale_date", { ascending: false })
 
-  return { data, error };
+  return { data, error }
 }
 
 // Busca uma venda específica, com os itens vendidos (+ nome do produto de
 // cada item) e o histórico de pagamentos de fiado já feitos
 export async function getSaleById(id) {
   const { data, error } = await supabase
-    .from('sales')
-    .select('*, customers(name), sale_items(*, products(name)), credit_payments(*)')
-    .eq('id', id)
-    .single();
+    .from("sales")
+    .select(
+      "*, customers(name), sale_items(*, products(name)), credit_payments(*)",
+    )
+    .eq("id", id)
+    .single()
 
-  return { data, error };
+  return { data, error }
 }
 
 // Cria uma nova venda com múltiplos itens.
@@ -45,16 +47,16 @@ export async function createSale(saleData) {
   const itemsWithSubtotal = saleData.items.map((item) => ({
     ...item,
     subtotal: item.quantity * item.unitPrice,
-  }));
+  }))
 
   const totalAmount = itemsWithSubtotal.reduce(
     (soma, item) => soma + item.subtotal,
-    0
-  );
+    0,
+  )
 
   // 2. Cria a venda em si (linha na tabela "sales")
   const { data: saleRows, error: saleError } = await supabase
-    .from('sales')
+    .from("sales")
     .insert([
       {
         customer_id: saleData.customerId,
@@ -64,11 +66,11 @@ export async function createSale(saleData) {
         payment_status: saleData.paymentStatus,
       },
     ])
-    .select();
+    .select()
 
-  if (saleError) return { data: null, error: saleError };
+  if (saleError) return { data: null, error: saleError }
 
-  const sale = saleRows[0];
+  const sale = saleRows[0]
 
   // 3. Cria os itens da venda (linhas na tabela "sale_items"), todos
   // vinculados à venda que acabamos de criar através do sale_id
@@ -78,29 +80,36 @@ export async function createSale(saleData) {
     quantity: item.quantity,
     unit_price: item.unitPrice,
     subtotal: item.subtotal,
-  }));
+  }))
 
   const { error: itemsError } = await supabase
-    .from('sale_items')
-    .insert(saleItemsToInsert);
+    .from("sale_items")
+    .insert(saleItemsToInsert)
 
-  if (itemsError) return { data: null, error: itemsError };
+  if (itemsError) return { data: null, error: itemsError }
 
   // 4. Abate o estoque de cada produto vendido, chamando o productService
   // (que é o dono da lógica de estoque) — nunca mexemos em stock_quantity
   // diretamente por aqui.
   for (const item of itemsWithSubtotal) {
-    const { error: stockError } = await decreaseStock(item.productId, item.quantity);
+    const { error: stockError } = await decreaseStock(
+      item.productId,
+      item.quantity,
+    )
 
     if (stockError) {
       // A venda já foi registrada quando chegamos aqui — não faz sentido
       // "desfazer" tudo por um erro no abate de estoque. Por enquanto,
       // deixamos o erro registrado no console para investigação manual.
-      console.error('Erro ao abater estoque do produto', item.productId, stockError);
+      console.error(
+        "Erro ao abater estoque do produto",
+        item.productId,
+        stockError,
+      )
     }
   }
 
-  return { data: sale, error: null };
+  return { data: sale, error: null }
 }
 
 // Calcula o saldo devedor de uma venda (total da venda menos a soma de
@@ -109,79 +118,90 @@ export async function createSale(saleData) {
 export function calculateSaleBalance(sale) {
   const totalPago = (sale.credit_payments ?? []).reduce(
     (soma, pagamento) => soma + pagamento.amount_paid,
-    0
-  );
+    0,
+  )
 
-  return sale.total_amount - totalPago;
+  return sale.total_amount - totalPago
 }
 
 // Registra um novo pagamento (parcial ou total) de uma venda fiado, e
 // atualiza automaticamente o status da venda se o saldo chegar a zero.
-export async function addCreditPayment(saleId, amountPaid, paymentMethod, notes) {
+export async function addCreditPayment(
+  saleId,
+  amountPaid,
+  paymentMethod,
+  notes,
+) {
   const { data: paymentData, error: paymentError } = await supabase
-    .from('credit_payments')
-    .insert([{ sale_id: saleId, amount_paid: amountPaid, payment_method: paymentMethod, notes }])
-    .select();
+    .from("credit_payments")
+    .insert([
+      {
+        sale_id: saleId,
+        amount_paid: amountPaid,
+        payment_method: paymentMethod,
+        notes,
+      },
+    ])
+    .select()
 
-  if (paymentError) return { data: null, error: paymentError };
+  if (paymentError) return { data: null, error: paymentError }
 
   // Depois de registrar o pagamento, buscamos a venda atualizada (com todos
   // os pagamentos, incluindo o que acabamos de criar) para recalcular o saldo
-  const { data: sale, error: saleError } = await getSaleById(saleId);
-  if (saleError) return { data: paymentData, error: saleError };
+  const { data: sale, error: saleError } = await getSaleById(saleId)
+  if (saleError) return { data: paymentData, error: saleError }
 
-  const saldoDevedor = calculateSaleBalance(sale);
+  const saldoDevedor = calculateSaleBalance(sale)
 
   // Se o saldo chegou a zero (ou menos, por algum arredondamento), a venda
   // está quitada. Senão, ela passa a ser "parcial" (já recebeu algo, mas não tudo).
-  const novoStatus = saldoDevedor <= 0 ? 'paid' : 'partial';
+  const novoStatus = saldoDevedor <= 0 ? "paid" : "partial"
 
   const { error: updateError } = await supabase
-    .from('sales')
+    .from("sales")
     .update({ payment_status: novoStatus })
-    .eq('id', saleId);
+    .eq("id", saleId)
 
-  if (updateError) return { data: paymentData, error: updateError };
+  if (updateError) return { data: paymentData, error: updateError }
 
-  return { data: paymentData, error: null };
+  return { data: paymentData, error: null }
 }
 
 // Remove uma venda. Como sale_items e credit_payments têm "on delete cascade"
 // vinculados a sale_id, apagar a venda já remove os itens e pagamentos dela
 // automaticamente — não precisamos apagar essas linhas manualmente antes.
 export async function deleteSale(id) {
-  const { data, error } = await supabase
-    .from('sales')
-    .delete()
-    .eq('id', id);
+  const { data, error } = await supabase.from("sales").delete().eq("id", id)
 
-  return { data, error };
+  return { data, error }
 }
 
 // Busca todas as vendas que ainda têm pendência de fiado (status "credit" ou
-// "partial"), já com o nome do cliente e os pagamentos feitos até agora —
-// é essa consulta que vai alimentar a tela de controle de fiado ("quem me deve").
+// "partial"), já com o nome e telefone do cliente e os pagamentos feitos até
+// agora — é essa consulta que vai alimentar a tela de controle de fiado
+// ("quem me deve"). O telefone é necessário para a ação de enviar o resumo
+// do débito por WhatsApp.
 export async function listOpenCreditSales() {
   const { data, error } = await supabase
-    .from('sales')
-    .select('*, customers(name), credit_payments(*)')
-    .in('payment_status', ['credit', 'partial'])
-    .order('sale_date', { ascending: true });
+    .from("sales")
+    .select("*, customers(name, phone), credit_payments(*)")
+    .in("payment_status", ["credit", "partial"])
+    .order("sale_date", { ascending: true })
 
-  return { data, error };
+  return { data, error }
 }
 
 // Busca as vendas em aberto de UM cliente específico, da mais antiga para a
 // mais nova — é essa ordem que a alocação de pagamento (FIFO) usa abaixo.
 export async function listOpenCreditSalesByCustomer(customerId) {
   const { data, error } = await supabase
-    .from('sales')
-    .select('*, credit_payments(*)')
-    .eq('customer_id', customerId)
-    .in('payment_status', ['credit', 'partial'])
-    .order('sale_date', { ascending: true });
+    .from("sales")
+    .select("*, credit_payments(*)")
+    .eq("customer_id", customerId)
+    .in("payment_status", ["credit", "partial"])
+    .order("sale_date", { ascending: true })
 
-  return { data, error };
+  return { data, error }
 }
 
 // Registra um único pagamento de um cliente e distribui esse valor
@@ -194,39 +214,45 @@ export async function listOpenCreditSalesByCustomer(customerId) {
 // (que passa a "partial"). Cada "fatia" vira uma linha separada em
 // credit_payments, reaproveitando addCreditPayment (que já cuida de
 // atualizar o status de cada venda).
-export async function payCustomerCredit(customerId, amount, paymentMethod, notes) {
-  const { data: openSales, error: fetchError } = await listOpenCreditSalesByCustomer(customerId);
-  if (fetchError) return { data: null, error: fetchError };
+export async function payCustomerCredit(
+  customerId,
+  amount,
+  paymentMethod,
+  notes,
+) {
+  const { data: openSales, error: fetchError } =
+    await listOpenCreditSalesByCustomer(customerId)
+  if (fetchError) return { data: null, error: fetchError }
 
-  let valorRestante = amount;
-  const pagamentosRealizados = [];
+  let valorRestante = amount
+  const pagamentosRealizados = []
 
   for (const sale of openSales) {
-    if (valorRestante <= 0) break;
+    if (valorRestante <= 0) break
 
-    const saldoDevedor = calculateSaleBalance(sale);
-    if (saldoDevedor <= 0) continue; // segurança: não deveria acontecer, mas evita pagamento de R$0
+    const saldoDevedor = calculateSaleBalance(sale)
+    if (saldoDevedor <= 0) continue // segurança: não deveria acontecer, mas evita pagamento de R$0
 
     // Aloca o menor valor entre "quanto ainda sobrou do pagamento" e
     // "quanto essa venda específica ainda deve"
-    const valorAlocado = Math.min(valorRestante, saldoDevedor);
+    const valorAlocado = Math.min(valorRestante, saldoDevedor)
 
     const { error: paymentError } = await addCreditPayment(
       sale.id,
       valorAlocado,
       paymentMethod,
-      notes
-    );
+      notes,
+    )
 
     if (paymentError) {
       // Já alocamos parte do pagamento em vendas anteriores quando isso
       // acontece — não desfazemos o que já foi feito, só paramos aqui e
       // avisamos que o processo não terminou por completo.
-      return { data: { pagamentosRealizados }, error: paymentError };
+      return { data: { pagamentosRealizados }, error: paymentError }
     }
 
-    pagamentosRealizados.push({ saleId: sale.id, valorAlocado });
-    valorRestante -= valorAlocado;
+    pagamentosRealizados.push({ saleId: sale.id, valorAlocado })
+    valorRestante -= valorAlocado
   }
 
   // Se sobrou valor não alocado, é porque o pagamento foi maior do que a
@@ -235,5 +261,5 @@ export async function payCustomerCredit(customerId, amount, paymentMethod, notes
   return {
     data: { pagamentosRealizados, valorNaoAlocado: valorRestante },
     error: null,
-  };
+  }
 }
