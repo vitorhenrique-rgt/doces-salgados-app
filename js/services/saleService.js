@@ -37,22 +37,32 @@ export async function getSaleById(id) {
 
 // Cria uma nova venda com múltiplos itens.
 // saleData = {
-//   customerId, saleDate, paymentMethod, paymentStatus,
+//   customerId, saleDate, paymentMethod, paymentStatus, discountAmount,
 //   items: [{ productId, quantity, unitPrice }, ...]
 // }
+// discountAmount é opcional (desconto em R$, não percentual) — usado
+// principalmente para arredondar o valor cobrado do cliente.
 export async function createSale(saleData) {
   // 1. Calculamos o subtotal de cada item (quantidade x preço unitário) e
-  // somamos tudo para chegar no total da venda — essa conta é simples o
+  // somamos tudo para chegar no subtotal da venda — essa conta é simples o
   // bastante para viver aqui no service, não precisa de um arquivo separado.
   const itemsWithSubtotal = saleData.items.map((item) => ({
     ...item,
     subtotal: item.quantity * item.unitPrice,
   }))
 
-  const totalAmount = itemsWithSubtotal.reduce(
+  const subtotal = itemsWithSubtotal.reduce(
     (soma, item) => soma + item.subtotal,
     0,
   )
+
+  // O total_amount salvo é o valor FINAL da venda, já com o desconto
+  // abatido — é esse valor que o resto do sistema usa (saldo devedor,
+  // A Receber, etc.), então aplicamos o desconto aqui, uma única vez.
+  // Math.max com 0 evita um total negativo se o desconto digitado for
+  // maior que o subtotal dos itens.
+  const discountAmount = saleData.discountAmount ?? 0;
+  const totalAmount = Math.max(subtotal - discountAmount, 0);
 
   // 2. Cria a venda em si (linha na tabela "sales")
   const { data: saleRows, error: saleError } = await supabase
@@ -62,6 +72,7 @@ export async function createSale(saleData) {
         customer_id: saleData.customerId,
         sale_date: saleData.saleDate,
         total_amount: totalAmount,
+        discount_amount: discountAmount,
         payment_method: saleData.paymentMethod,
         payment_status: saleData.paymentStatus,
       },
@@ -263,3 +274,4 @@ export async function payCustomerCredit(
     error: null,
   }
 }
+
