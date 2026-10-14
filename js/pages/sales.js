@@ -36,6 +36,7 @@ const productSearchInput = document.getElementById('productSearchInput');
 const productSearchResultsEl = document.getElementById('productSearchResults');
 const saleItemsListEl = document.getElementById('saleItemsList');
 const noItemsMessageEl = document.getElementById('noItemsMessage');
+const discountInput = document.getElementById('saleDiscountInput');
 const totalValueEl = document.getElementById('saleTotalValue');
 const paymentMethodSelect = document.getElementById('paymentMethodSelect');
 const amountReceivedFieldEl = document.getElementById('amountReceivedField');
@@ -372,13 +373,28 @@ function renderSaleItems() {
   updateTotal();
 }
 
+// Lê o desconto digitado, tratando campo vazio/inválido/negativo como 0 —
+// desconto nunca é obrigatório, e nunca pode ser um valor negativo (isso
+// aumentaria o total em vez de diminuir).
+function getDiscountAmount() {
+  const valor = Number(discountInput.value);
+  return Number.isNaN(valor) || valor < 0 ? 0 : valor;
+}
+
 function updateTotal() {
-  const total = saleItems.reduce(
-    (soma, item) => soma + item.quantity * item.unitPrice,
-    0
-  );
+  const subtotal = saleItems.reduce((soma, item) => soma + item.quantity * item.unitPrice, 0);
+  const desconto = getDiscountAmount();
+
+  // O desconto é de edição livre — o usuário decide o valor, inclusive
+  // zerando o total (ex: dar o produto de brinde). Math.max só protege
+  // contra um desconto digitado maior que o subtotal, pra não ficar
+  // negativo na tela.
+  const total = Math.max(subtotal - desconto, 0);
   totalValueEl.textContent = formatCurrency(total);
 }
+
+// A cada vez que o desconto muda, recalculamos o total exibido
+discountInput.addEventListener('input', updateTotal);
 
 // ---- Lista de vendas já registradas ----
 
@@ -637,10 +653,15 @@ formEl.addEventListener('submit', async (event) => {
   const paymentMethod = paymentMethodSelect.value;
   const isCredit = paymentMethod === 'credit';
 
-  const totalDaVenda = saleItems.reduce(
+  // O total que importa para decidir a situação de pagamento é o total
+  // COM o desconto já aplicado — é esse valor que o cliente efetivamente
+  // precisa pagar, não o subtotal dos itens.
+  const subtotalDaVenda = saleItems.reduce(
     (soma, item) => soma + item.quantity * item.unitPrice,
     0
   );
+  const discountAmount = getDiscountAmount();
+  const totalDaVenda = Math.max(subtotalDaVenda - discountAmount, 0);
 
   // Se a forma de pagamento é "A receber", a venda inteira fica pendente e
   // nenhum valor foi recebido agora. Para qualquer outra forma, olhamos o
@@ -664,6 +685,7 @@ formEl.addEventListener('submit', async (event) => {
     saleDate: saleDateInput.value,
     paymentMethod,
     paymentStatus,
+    discountAmount,
     items: saleItems.map((item) => ({
       productId: item.productId,
       quantity: item.quantity,
