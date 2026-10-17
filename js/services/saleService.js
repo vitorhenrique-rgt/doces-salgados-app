@@ -8,14 +8,18 @@
 // productService (ver skill doces-salgados-camada-servico).
 
 import { supabase } from "../supabaseClient.js"
-import { decreaseStock } from "./productService.js"
+import { decreaseStock, increaseStock } from "./productService.js"
 
 // Busca todas as vendas, já trazendo o nome do cliente junto (join automático,
 // possível porque sales.customer_id já referencia customers.id no banco)
+// "credit_payments(id)" aqui não é pra mostrar pagamento nenhum na lista —
+// é só pra saber SE existe algum pagamento (sale.credit_payments.length > 0),
+// o que decide se a venda pode ser editada ou excluída (ver updateSale e
+// deleteSale, mais abaixo).
 export async function listSales() {
   const { data, error } = await supabase
     .from("sales")
-    .select("*, customers(name)")
+    .select("*, customers(name), credit_payments(id)")
     .order("sale_date", { ascending: false })
 
   return { data, error }
@@ -35,18 +39,11 @@ export async function getSaleById(id) {
   return { data, error }
 }
 
-// Cria uma nova venda com múltiplos itens.
-// saleData = {
-//   customerId, saleDate, paymentMethod, paymentStatus, discountAmount,
-//   items: [{ productId, quantity, unitPrice }, ...]
-// }
-// discountAmount é opcional (desconto em R$, não percentual) — usado
-// principalmente para arredondar o valor cobrado do cliente.
-export async function createSale(saleData) {
-  // 1. Calculamos o subtotal de cada item (quantidade x preço unitário) e
-  // somamos tudo para chegar no subtotal da venda — essa conta é simples o
-  // bastante para viver aqui no service, não precisa de um arquivo separado.
-  const itemsWithSubtotal = saleData.items.map((item) => ({
+// Função auxiliar interna (não exportada): calcula o subtotal de cada
+// item e o total já com o desconto aplicado — usada tanto por createSale
+// quanto por updateSale, pra não duplicar essa conta em dois lugares.
+function calculateSaleTotals(items, discountAmount) {
+  const itemsWithSubtotal = items.map((item) => ({
     ...item,
     subtotal: item.quantity * item.unitPrice,
   }))
@@ -56,15 +53,31 @@ export async function createSale(saleData) {
     0,
   )
 
-  // O total_amount salvo é o valor FINAL da venda, já com o desconto
-  // abatido — é esse valor que o resto do sistema usa (saldo devedor,
-  // A Receber, etc.), então aplicamos o desconto aqui, uma única vez.
   // Math.max com 0 evita um total negativo se o desconto digitado for
   // maior que o subtotal dos itens.
-  const discountAmount = saleData.discountAmount ?? 0;
-  const totalAmount = Math.max(subtotal - discountAmount, 0);
+  const totalAmount = Math.max(subtotal - (discountAmount ?? 0), 0)
 
-  // 2. Cria a venda em si (linha na tabela "sales")
+  return { itemsWithSubtotal, totalAmount }
+}
+
+// Cria uma nova venda com múltiplos itens.
+// saleData = {
+//   customerId, saleDate, paymentMethod, paymentStatus, discountAmount,
+//   items: [{ productId, quantity, unitPrice }, ...]
+// }
+// discountAmount é opcional (desconto em R$, não percentual) — edição
+// livre do usuário, pode até zerar o total (ex: dar o produto de brinde).
+export async function createSale(saleData) {
+  // O total_amount salvo é o valor FINAL da venda, já com o desconto
+  // abatido — é esse valor que o resto do sistema usa (saldo devedor,
+  // A Receber, etc.).
+  const discountAmount = saleData.discountAmount ?? 0
+  const { itemsWithSubtotal, totalAmount } = calculateSaleTotals(
+    saleData.items,
+    discountAmount,
+  )
+
+  // 1. Cria a venda em si (linha na tabela "sales")
   const { data: saleRows, error: saleError } = await supabase
     .from("sales")
     .insert([
@@ -83,7 +96,7 @@ export async function createSale(saleData) {
 
   const sale = saleRows[0]
 
-  // 3. Cria os itens da venda (linhas na tabela "sale_items"), todos
+  // 2. Cria os itens da venda (linhas na tabela "sale_items"), todos
   // vinculados à venda que acabamos de criar através do sale_id
   const saleItemsToInsert = itemsWithSubtotal.map((item) => ({
     sale_id: sale.id,
@@ -99,7 +112,7 @@ export async function createSale(saleData) {
 
   if (itemsError) return { data: null, error: itemsError }
 
-  // 4. Abate o estoque de cada produto vendido, chamando o productService
+  // 3. Abate o estoque de cada produto vendido, chamando o productService
   // (que é o dono da lógica de estoque) — nunca mexemos em stock_quantity
   // diretamente por aqui.
   for (const item of itemsWithSubtotal) {
@@ -178,13 +191,159 @@ export async function addCreditPayment(
   return { data: paymentData, error: null }
 }
 
-// Remove uma venda. Como sale_items e credit_payments têm "on delete cascade"
-// vinculados a sale_id, apagar a venda já remove os itens e pagamentos dela
+// Remove uma venda, devolvendo ao estoque a quantidade de cada item
+// vendido (sem isso, o estoque ficaria "faltando" para sempre). Como
+// sale_items e credit_payments têm "on delete cascade" vinculados a
+// sale_id, apagar a venda já remove os itens e pagamentos dela
 // automaticamente — não precisamos apagar essas linhas manualmente antes.
+//
+// Por decisão do usuário (2026-10-03): uma venda que já tem pagamento de
+// fiado registrado NÃO pode ser excluída — excluir apagaria esse histórico
+// de dinheiro já recebido. Nesses casos, devolvemos um erro explicando o
+// motivo, no mesmo formato { message } que os erros do Supabase já usam.
 export async function deleteSale(id) {
+  const { data: sale, error: fetchError } = await getSaleById(id)
+  if (fetchError) return { data: null, error: fetchError }
+
+  if ((sale.credit_payments ?? []).length > 0) {
+    return {
+      data: null,
+      error: {
+        message:
+          "Esta venda já tem pagamento de fiado registrado e não pode ser excluída.",
+      },
+    }
+  }
+
+  for (const item of sale.sale_items) {
+    const { error: stockError } = await increaseStock(
+      item.product_id,
+      item.quantity,
+    )
+    if (stockError) {
+      console.error(
+        "Erro ao devolver estoque do produto",
+        item.product_id,
+        stockError,
+      )
+    }
+  }
+
   const { data, error } = await supabase.from("sales").delete().eq("id", id)
 
   return { data, error }
+}
+
+// Atualiza uma venda existente (cliente, data, itens, desconto, forma de
+// pagamento). Por decisão do usuário (2026-10-03), só é permitido editar
+// vendas que AINDA NÃO têm nenhum pagamento de fiado registrado — evita
+// ter que decidir o que fazer com dinheiro que o cliente já pagou numa
+// venda que mudou de valor depois.
+//
+// saleData = {
+//   customerId, saleDate, paymentMethod, paymentStatus, discountAmount,
+//   items: [{ productId, quantity, unitPrice }, ...]
+// }
+export async function updateSale(id, saleData) {
+  const { data: existingSale, error: fetchError } = await getSaleById(id)
+  if (fetchError) return { data: null, error: fetchError }
+
+  if ((existingSale.credit_payments ?? []).length > 0) {
+    return {
+      data: null,
+      error: {
+        message:
+          "Esta venda já tem pagamento de fiado registrado e não pode ser editada.",
+      },
+    }
+  }
+
+  // Venda já paga (à vista, no momento da venda) também não pode ser
+  // editada — o dinheiro já foi recebido pelos itens originais. Excluir
+  // continua permitido nesse caso (ver deleteSale, mais abaixo), só a
+  // edição é bloqueada aqui.
+  if (existingSale.payment_status === "paid") {
+    return {
+      data: null,
+      error: { message: "Vendas já pagas não podem ser editadas." },
+    }
+  }
+
+  // 1. Devolve ao estoque os itens da versão ANTIGA da venda — antes de
+  // aplicar os itens novos, "desfazemos" o abate original.
+  for (const item of existingSale.sale_items) {
+    const { error: stockError } = await increaseStock(
+      item.product_id,
+      item.quantity,
+    )
+    if (stockError) {
+      console.error(
+        "Erro ao devolver estoque do produto",
+        item.product_id,
+        stockError,
+      )
+    }
+  }
+
+  // 2. Remove os itens antigos — serão substituídos pelos novos
+  const { error: deleteItemsError } = await supabase
+    .from("sale_items")
+    .delete()
+    .eq("sale_id", id)
+  if (deleteItemsError) return { data: null, error: deleteItemsError }
+
+  // 3. Recalcula subtotal/total com os itens e o desconto novos (mesma
+  // função usada pelo createSale, pra não duplicar essa regra)
+  const discountAmount = saleData.discountAmount ?? 0
+  const { itemsWithSubtotal, totalAmount } = calculateSaleTotals(
+    saleData.items,
+    discountAmount,
+  )
+
+  // 4. Atualiza os dados da venda em si
+  const { error: updateError } = await supabase
+    .from("sales")
+    .update({
+      customer_id: saleData.customerId,
+      sale_date: saleData.saleDate,
+      total_amount: totalAmount,
+      discount_amount: discountAmount,
+      payment_method: saleData.paymentMethod,
+      payment_status: saleData.paymentStatus,
+    })
+    .eq("id", id)
+  if (updateError) return { data: null, error: updateError }
+
+  // 5. Insere os itens novos
+  const saleItemsToInsert = itemsWithSubtotal.map((item) => ({
+    sale_id: id,
+    product_id: item.productId,
+    quantity: item.quantity,
+    unit_price: item.unitPrice,
+    subtotal: item.subtotal,
+  }))
+
+  const { error: itemsError } = await supabase
+    .from("sale_items")
+    .insert(saleItemsToInsert)
+  if (itemsError) return { data: null, error: itemsError }
+
+  // 6. Abate o estoque conforme os itens NOVOS
+  for (const item of itemsWithSubtotal) {
+    const { error: stockError } = await decreaseStock(
+      item.productId,
+      item.quantity,
+    )
+    if (stockError) {
+      console.error(
+        "Erro ao abater estoque do produto",
+        item.productId,
+        stockError,
+      )
+    }
+  }
+
+  return { data: { id }, error: null }
 }
 
 // Busca todas as vendas que ainda têm pendência de fiado (status "credit" ou
@@ -274,4 +433,3 @@ export async function payCustomerCredit(
     error: null,
   }
 }
-
