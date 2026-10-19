@@ -94,12 +94,27 @@
                nova (criar, não editar) — mesmo padrão de Clientes/Produtos. -->
             <input type="hidden" id="saleId" />
 
-            <!-- ---- Cliente e data ---- -->
-            <label for="saleCustomer">Cliente</label>
-            <select id="saleCustomer" required>
-              <option value="" disabled selected>Selecione o cliente</option>
-              <!-- As opções de cliente serão inseridas aqui via JavaScript -->
-            </select>
+            <!-- ---- Cliente e data ----
+               Campo de busca com autocomplete, mesmo padrão do campo de
+               produto logo abaixo — mostra nome + endereço nas sugestões,
+               para diferenciar clientes com o mesmo nome. O id do cliente
+               selecionado fica guardado no campo escondido "saleCustomer"
+               (é esse valor que o formulário realmente usa/valida). -->
+            <label for="customerSearchInput">Cliente</label>
+            <div class="productSearchWrapper">
+              <input
+                type="text"
+                id="customerSearchInput"
+                placeholder="Digite o nome do cliente..."
+                autocomplete="off"
+              />
+              <input type="hidden" id="saleCustomer" />
+              <ul
+                id="customerSearchResults"
+                class="productSearchResults"
+                hidden
+              ></ul>
+            </div>
 
             <label for="saleDate">Data da venda</label>
             <input type="date" id="saleDate" required />

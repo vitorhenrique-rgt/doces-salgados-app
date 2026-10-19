@@ -685,6 +685,25 @@ td .rowActionButton:disabled:hover,
   white-space: nowrap;
 }
 
+/* Resultado de cliente: nome em cima, endereço embaixo (menor e mais
+   claro) — diferente do resultado de produto (nome + preço lado a lado),
+   porque aqui o objetivo é diferenciar clientes com o mesmo nome. */
+.productSearchResults li.customerResultItem {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+}
+
+.resultCustomerName {
+  color: var(--color-text);
+  font: 400 var(--text-base) var(--font-ui);
+}
+
+.resultCustomerAddress {
+  color: var(--color-text-muted);
+  font: 400 var(--text-xs) var(--font-ui);
+}
+
 .productSearchResults .noResultsItem {
   color: var(--color-text-muted);
   cursor: default;

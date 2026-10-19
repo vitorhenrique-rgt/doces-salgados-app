@@ -45,7 +45,9 @@ const saleStatusFilterSelect = document.getElementById("saleStatusFilter")
 
 const formEl = document.getElementById("saleForm")
 const saleIdInput = document.getElementById("saleId")
-const customerSelect = document.getElementById("saleCustomer")
+const customerSearchInput = document.getElementById("customerSearchInput")
+const customerSearchResultsEl = document.getElementById("customerSearchResults")
+const customerIdInput = document.getElementById("saleCustomer")
 const saleDateInput = document.getElementById("saleDate")
 const productSearchInput = document.getElementById("productSearchInput")
 const productSearchResultsEl = document.getElementById("productSearchResults")
@@ -60,6 +62,11 @@ const formMessageEl = document.getElementById("formMessage")
 const salesTableBodyEl = document.getElementById("salesTableBody")
 
 // ---- Estado da tela em memória ----
+// "allCustomers" guarda a lista completa de clientes, carregada uma vez ao
+// abrir a página — a busca do campo de cliente filtra esse array em
+// memória, mesma ideia já usada na busca de produtos logo abaixo.
+let allCustomers = []
+
 // "allProducts" guarda a lista completa de produtos, carregada uma vez ao
 // abrir a página — a busca filtra esse array em memória, sem precisar
 // consultar o Supabase de novo a cada letra digitada.
@@ -133,7 +140,8 @@ async function enterEditMode(sale) {
   saleIdInput.value = fullSale.id
   formTitleEl.textContent = "Editar venda"
 
-  customerSelect.value = fullSale.customer_id
+  customerIdInput.value = fullSale.customer_id
+  customerSearchInput.value = fullSale.customers?.name ?? ""
   saleDateInput.value = fullSale.sale_date
   discountInput.value =
     fullSale.discount_amount > 0 ? fullSale.discount_amount : ""
@@ -180,9 +188,9 @@ cancelSaleButton.addEventListener("click", () => {
   clearFormMessage()
 })
 
-// ---- Carregar clientes no <select> ----
+// ---- Carregar clientes em memória (para a busca) ----
 
-async function loadCustomersIntoSelect() {
+async function loadCustomers() {
   const { data: customers, error } = await listCustomers()
 
   if (error) {
@@ -191,12 +199,73 @@ async function loadCustomersIntoSelect() {
     return
   }
 
-  for (const customer of customers) {
-    const option = document.createElement("option")
-    option.value = customer.id
-    option.textContent = customer.name
-    customerSelect.appendChild(option)
+  allCustomers = customers
+}
+
+// ---- Busca de clientes (autocomplete, mesmo padrão da busca de produtos) ----
+
+customerSearchInput.addEventListener("input", () => {
+  // Qualquer edição no texto invalida a seleção anterior — só volta a
+  // valer um cliente depois que o usuário escolher de novo na lista,
+  // evitando enviar um id que não bate mais com o que está escrito.
+  customerIdInput.value = ""
+
+  const termoBuscado = customerSearchInput.value.trim().toLowerCase()
+
+  if (termoBuscado === "") {
+    customerSearchResultsEl.hidden = true
+    customerSearchResultsEl.innerHTML = ""
+    return
   }
+
+  const encontrados = allCustomers.filter((customer) =>
+    customer.name.toLowerCase().includes(termoBuscado),
+  )
+
+  renderCustomerSearchResults(encontrados)
+})
+
+function renderCustomerSearchResults(customers) {
+  customerSearchResultsEl.innerHTML = ""
+
+  if (customers.length === 0) {
+    const emptyItem = document.createElement("li")
+    emptyItem.className = "noResultsItem"
+    emptyItem.textContent = "Nenhum cliente encontrado."
+    customerSearchResultsEl.appendChild(emptyItem)
+    customerSearchResultsEl.hidden = false
+    return
+  }
+
+  // Mesmo limite de 8 resultados por vez do campo de produto — busca
+  // rápida, sem virar uma lista gigante rolando na tela do celular.
+  for (const customer of customers.slice(0, 8)) {
+    const resultItem = document.createElement("li")
+    resultItem.className = "customerResultItem"
+
+    // O endereço só aparece se existir — evita uma segunda linha vazia
+    // pra clientes sem endereço cadastrado. É essa segunda linha, menor
+    // e mais clara, que ajuda a diferenciar clientes com o mesmo nome.
+    const addressHtml = customer.address
+      ? `<span class="resultCustomerAddress">${customer.address}</span>`
+      : ""
+
+    resultItem.innerHTML = `
+      <span class="resultCustomerName">${customer.name}</span>
+      ${addressHtml}
+    `
+
+    resultItem.addEventListener("click", () => {
+      customerIdInput.value = customer.id
+      customerSearchInput.value = customer.name
+      customerSearchResultsEl.hidden = true
+      customerSearchResultsEl.innerHTML = ""
+    })
+
+    customerSearchResultsEl.appendChild(resultItem)
+  }
+
+  customerSearchResultsEl.hidden = false
 }
 
 // ---- Carregar produtos em memória (para a busca) ----
@@ -795,6 +864,20 @@ function encontrarItensComEstoqueInsuficiente() {
 formEl.addEventListener("submit", async (event) => {
   event.preventDefault()
 
+  // Como o campo de cliente agora é um autocomplete (não um <select>
+  // nativo), o navegador não valida sozinho que um cliente de verdade foi
+  // escolhido — o usuário pode ter só digitado um texto sem clicar em
+  // nenhum resultado. Conferimos isso na mão, olhando o campo escondido
+  // que só é preenchido quando um resultado da lista é clicado.
+  if (!customerIdInput.value) {
+    showFormMessage(
+      "Selecione um cliente da lista antes de registrar a venda.",
+      "error",
+    )
+    customerSearchInput.focus()
+    return
+  }
+
   if (saleItems.length === 0) {
     showFormMessage(
       "Adicione pelo menos um produto antes de registrar a venda.",
@@ -852,7 +935,7 @@ formEl.addEventListener("submit", async (event) => {
       : "partial"
 
   const saleData = {
-    customerId: customerSelect.value,
+    customerId: customerIdInput.value,
     saleDate: saleDateInput.value,
     paymentMethod,
     paymentStatus,
@@ -930,6 +1013,8 @@ function resetForm() {
   formEl.reset()
   saleIdInput.value = ""
   formTitleEl.textContent = "Nova venda"
+  customerSearchResultsEl.hidden = true
+  customerSearchResultsEl.innerHTML = ""
   saleItems = []
   renderSaleItems()
   amountReceivedInput.value = ""
@@ -943,7 +1028,7 @@ function resetForm() {
 async function init() {
   updateAmountFieldVisibility()
 
-  await loadCustomersIntoSelect()
+  await loadCustomers()
   await loadProducts()
   renderSaleItems()
   loadSales()
