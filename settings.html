@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="pt-br">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Configurações</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <div id="mainNav"></div>
+    <main>
+      <h1>Configurações</h1>
+
+      <section>
+        <h2>Dados para cobrança Pix</h2>
+        <p class="settingsHint">
+          Usados para gerar o código Pix copia-e-cola na tela "A Receber". Esses
+          dados não enviam nem recebem nada automaticamente — só preenchem o
+          código que o seu cliente vai colar no app do banco dele.
+        </p>
+
+        <form id="settingsForm">
+          <label for="pixKeyInput">Chave Pix</label>
+          <input
+            type="text"
+            id="pixKeyInput"
+            placeholder="CPF, CNPJ, e-mail, telefone ou chave aleatória"
+            required
+          />
+
+          <label for="receiverNameInput">Nome do recebedor</label>
+          <input
+            type="text"
+            id="receiverNameInput"
+            maxlength="25"
+            placeholder="Até 25 caracteres"
+            required
+          />
+
+          <label for="receiverCityInput">Cidade</label>
+          <input
+            type="text"
+            id="receiverCityInput"
+            maxlength="15"
+            placeholder="Até 15 caracteres"
+            required
+          />
+
+          <div class="button-row">
+            <button type="submit">Salvar configurações</button>
+          </div>
+        </form>
+
+        <p id="formMessage"></p>
+      </section>
+    </main>
+
+    <script type="module" src="js/components/nav.js"></script>
+    <script type="module" src="js/pages/settings.js"></script>
+  </body>
+</html>

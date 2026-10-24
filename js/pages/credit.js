@@ -12,6 +12,7 @@ import {
   calculateSaleBalance,
   payCustomerCredit,
 } from "../services/saleService.js"
+import { getBusinessSettings } from "../services/settingsService.js"
 import { formatCurrency } from "../utils/formatCurrency.js"
 import {
   iconEye,
@@ -20,6 +21,7 @@ import {
 } from "../components/icons.js"
 import { normalizeText } from "../utils/textSearch.js"
 import { buildWhatsAppUrl } from "../utils/whatsapp.js"
+import { buildPixCode } from "../utils/pixCode.js"
 
 const searchInput = document.getElementById("creditSearch")
 const tableBodyEl = document.getElementById("creditTableBody")
@@ -172,6 +174,58 @@ function handleSendWhatsApp(customerGroup) {
 
   // Abre em nova aba — o WhatsApp Web ou o app já carrega com a mensagem
   // pronta, mas quem envia de fato é o usuário, conferindo antes.
+  window.open(url, "_blank")
+}
+
+// ---- Gerar cobrança Pix e enviar por WhatsApp ----
+//
+// Ação disponível dentro do formulário de "Registrar pagamento" (ver
+// toggleCustomerDetails, mais abaixo), não mais como botão solto na
+// linha — só aparece quando a forma de pagamento selecionada é "Pix".
+//
+// "amount" é o valor a cobrar: normalmente é o que o usuário já digitou
+// no campo "Valor recebido" daquele formulário (pode ser menor que o
+// total, se for um pagamento parcial); se esse campo estiver vazio, quem
+// chama esta função usa o total devido do cliente.
+async function handleSendPix(customerGroup, amount) {
+  if (!customerGroup.customerPhone) {
+    showFormMessage(
+      `${customerGroup.customerName} não tem telefone cadastrado — não é possível enviar pelo WhatsApp.`,
+      "error",
+    )
+    return
+  }
+
+  const { data: settings, error } = await getBusinessSettings()
+
+  if (error) {
+    console.error(error)
+    showFormMessage(
+      "Não foi possível carregar as configurações de Pix.",
+      "error",
+    )
+    return
+  }
+
+  // Sem chave Pix configurada não tem como montar o código — orientamos o
+  // usuário a configurar antes, em vez de gerar um código quebrado.
+  if (!settings || !settings.pix_key) {
+    showFormMessage(
+      'Configure sua chave Pix na tela "Configurações" antes de gerar uma cobrança.',
+      "error",
+    )
+    return
+  }
+
+  const pixCode = buildPixCode(settings, amount)
+
+  // A mensagem é SÓ o código, sem nenhum texto ao redor — o usuário já
+  // tem o botão "WhatsApp" pra mandar um extrato bonito e explicado; este
+  // aqui existe pra ser colado direto no app do banco. Texto extra em
+  // volta (saudação, instruções) obrigaria a pessoa a selecionar e
+  // apagar tudo isso manualmente antes de colar, o que ia contra o
+  // propósito do botão.
+  const url = buildWhatsAppUrl(customerGroup.customerPhone, pixCode)
   window.open(url, "_blank")
 }
 
@@ -334,6 +388,16 @@ function toggleCustomerDetails(customerGroup, customerRow) {
             <option value="card">Cartão</option>
           </select>
 
+          <!-- Só aparece quando "Pix" está selecionado acima. Cobra o
+               valor digitado em "Valor recebido"; se estiver vazio,
+               cobra o total devido do cliente (ver listener abaixo).
+               Usa o estilo de contorno (.secondaryButton) — é uma ação
+               importante, mas secundária: "Confirmar pagamento" continua
+               sendo o único destaque sólido do formulário, seguindo a
+               regra de "um único destaque de cor por tela" da skill de
+               estilo visual. -->
+          <button type="button" class="secondaryButton" data-action="send-pix" hidden>Enviar Pix</button>
+
           <label for="paymentNotes-${customerGroup.customerId}">Observação</label>
           <input type="text" id="paymentNotes-${customerGroup.customerId}" placeholder="Opcional" />
 
@@ -349,6 +413,30 @@ function toggleCustomerDetails(customerGroup, customerRow) {
   const amountInput = paymentFormEl.querySelector('input[type="number"]')
   const methodSelect = paymentFormEl.querySelector("select")
   const notesInput = paymentFormEl.querySelector('input[type="text"]')
+  const sendPixButton = paymentFormEl.querySelector('[data-action="send-pix"]')
+
+  // O botão "Enviar Pix" só faz sentido quando a forma de pagamento
+  // escolhida é "Pix" — nos outros casos, fica escondido.
+  function updateSendPixButtonVisibility() {
+    sendPixButton.hidden = methodSelect.value !== "pix"
+  }
+
+  updateSendPixButtonVisibility()
+  methodSelect.addEventListener("change", updateSendPixButtonVisibility)
+
+  sendPixButton.addEventListener("click", () => {
+    // Segue o valor digitado em "Valor recebido"; se estiver vazio (ou
+    // for um número inválido), cobra o total devido do cliente.
+    const valorDigitado = Number(amountInput.value)
+    const valorCobranca =
+      amountInput.value.trim() === "" ||
+      Number.isNaN(valorDigitado) ||
+      valorDigitado <= 0
+        ? customerGroup.totalOwed
+        : valorDigitado
+
+    handleSendPix(customerGroup, valorCobranca)
+  })
 
   paymentFormEl.addEventListener("submit", async (event) => {
     event.preventDefault()

@@ -51,6 +51,16 @@ export const iconMessage = `
   <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
 </svg>`.trim()
 
+// Ícone genérico de "copiar" — usado no botão de gerar Pix copia-e-cola.
+// Não é o logo oficial do Pix (marca registrada do Banco Central), só um
+// ícone de duas folhas sobrepostas, representando a ação de copiar, no
+// mesmo estilo de linha dos outros ícones desta lista.
+export const iconCopy = `
+<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  <rect x="9" y="9" width="12" height="12" rx="2" />
+  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+</svg>`.trim()
+
 // Monta o HTML de um botão de ação padrão: ícone + texto. O texto
 // (.actionLabel) some visualmente em telas pequenas (ver CSS), mas
 // continua existindo no HTML — leitores de tela continuam anunciando o

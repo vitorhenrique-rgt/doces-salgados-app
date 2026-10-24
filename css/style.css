@@ -183,6 +183,15 @@ h2 {
   margin-bottom: 0.75rem;
 }
 
+/* Texto explicativo abaixo de um título de seção (ex: tela de
+   Configurações) — tom secundário, menor, sem competir com o conteúdo
+   principal da tela. */
+.settingsHint {
+  font: 400 var(--text-sm) var(--font-ui);
+  color: var(--color-text-muted);
+  margin: -0.25rem 0 1rem;
+}
+
 /* ---- Formulário de Cliente ---- */
 section {
   background: var(--color-surface);
@@ -1146,6 +1155,23 @@ td .rowActionButton:disabled:hover,
   background: var(--color-primary);
   color: #ffffff;
   border: none;
+  width: 100%;
+}
+
+/* Botão secundário genérico — contorno, cor da marca, sem preenchimento
+   sólido. Para ações importantes mas que não são a ação principal da
+   tela/formulário (ex: "Enviar Pix" dentro do formulário de pagamento,
+   onde "Confirmar pagamento" já é o destaque sólido). Reaproveitável em
+   qualquer lugar do projeto que precisar desse mesmo papel visual. */
+.secondaryButton {
+  background: transparent;
+  color: var(--color-primary);
+  border: 1.5px solid var(--color-primary);
+  width: 100%;
+}
+
+.secondaryButton:hover {
+  background: var(--color-primary-soft);
 }
 
 .paymentForm .confirmPaymentButton:hover {
