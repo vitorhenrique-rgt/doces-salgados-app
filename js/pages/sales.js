@@ -551,6 +551,15 @@ const paymentStatusLabels = {
   credit: { text: "A receber", badgeClass: "badge--credit" },
 }
 
+// Usado para descrever a forma de pagamento de uma venda paga na hora
+// (sem nenhuma linha em credit_payments), na seção de pagamentos dos
+// detalhes — ver toggleSaleDetails, mais abaixo.
+const paymentMethodLabels = {
+  cash: "Dinheiro",
+  pix: "Pix",
+  card: "Cartão",
+}
+
 function formatDate(isoDate) {
   // O banco guarda a data como 'YYYY-MM-DD' — convertemos para 'DD/MM/YYYY',
   // formato mais comum de se ler no Brasil.
@@ -792,22 +801,44 @@ async function toggleSaleDetails(saleId, saleRow) {
     )
     .join("")
 
-  // Para vendas fiado ou parciais, mostramos também o histórico de
-  // pagamentos já feitos e o saldo que ainda falta receber.
+  // Mostramos o histórico de pagamentos em QUALQUER venda que já teve
+  // algum valor recebido — de forma padrão, sempre que existir pagamento,
+  // exibe (decisão do usuário, 2026-10-04). Isso cobre dois casos:
+  // 1) vendas com linhas de verdade em credit_payments (fiado pago aos
+  //    poucos, ou um valor recebido no momento da venda via "Valor
+  //    recebido agora");
+  // 2) vendas pagas de uma vez só no ato, que NÃO geram linha em
+  //    credit_payments (o pagamento já nasce como "paid" direto) — nesse
+  //    caso, montamos uma linha "sintética" representando esse pagamento,
+  //    com a data da venda e a forma de pagamento usada, para a tela
+  //    nunca ficar sem mostrar o valor pago.
+  const temPagamentosRegistrados = (sale.credit_payments ?? []).length > 0
+  const foiPagaNaHora =
+    sale.payment_status === "paid" && !temPagamentosRegistrados
+
   let pagamentosHtml = ""
-  if (sale.payment_status === "credit" || sale.payment_status === "partial") {
-    const listaPagamentos = sale.credit_payments.length
+  if (temPagamentosRegistrados || foiPagaNaHora) {
+    // Mesmo formato em qualquer linha, pra ficar padronizado: data — forma
+    // de pagamento, valor à direita. Nem a linha real (credit_payments)
+    // nem a sintética (venda paga na hora) mostram observações/texto
+    // extra aqui — só o essencial.
+    const listaPagamentos = temPagamentosRegistrados
       ? sale.credit_payments
           .map(
             (pagamento) => `
               <li>
-                <span>${formatDate(pagamento.payment_date)}${pagamento.notes ? ` — ${pagamento.notes}` : ""}</span>
+                <span>${formatDate(pagamento.payment_date)} — ${paymentMethodLabels[pagamento.payment_method] ?? pagamento.payment_method}</span>
                 <span>${formatCurrency(pagamento.amount_paid)}</span>
               </li>
             `,
           )
           .join("")
-      : "<li>Nenhum pagamento registrado ainda.</li>"
+      : `
+          <li>
+            <span>${formatDate(sale.sale_date)} — ${paymentMethodLabels[sale.payment_method] ?? sale.payment_method}</span>
+            <span>${formatCurrency(sale.total_amount)}</span>
+          </li>
+        `
 
     const saldoDevedor = calculateSaleBalance(sale)
 
