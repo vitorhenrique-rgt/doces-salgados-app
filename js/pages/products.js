@@ -14,36 +14,42 @@ import {
   deleteProduct,
   increaseStock,
   setStock,
-} from '../services/productService.js';
-import { showConfirmModal } from '../components/confirmModal.js';
-import { iconEdit, iconPlus, iconTrash, actionButtonContent } from '../components/icons.js';
-import { enforceIntegerString } from '../utils/inputMasks.js';
-import { normalizeText } from '../utils/textSearch.js';
-import { formatCurrency } from '../utils/formatCurrency.js';
+} from "../services/productService.js"
+import { showConfirmModal } from "../components/confirmModal.js"
+import {
+  iconEdit,
+  iconPlus,
+  iconTrash,
+  actionButtonContent,
+} from "../components/icons.js"
+import { enforceIntegerString } from "../utils/inputMasks.js"
+import { normalizeText } from "../utils/textSearch.js"
+import { formatCurrency } from "../utils/formatCurrency.js"
 
 // ---- Referências aos elementos do HTML ----
-const listViewEl = document.getElementById('listView');
-const formViewEl = document.getElementById('formView');
-const formTitleEl = document.getElementById('formTitle');
-const newProductButton = document.getElementById('newProductButton');
-const searchInput = document.getElementById('productSearch');
-const productListEl = document.getElementById('productList');
+const listViewEl = document.getElementById("listView")
+const formViewEl = document.getElementById("formView")
+const formTitleEl = document.getElementById("formTitle")
+const newProductButton = document.getElementById("newProductButton")
+const searchButton = document.getElementById("searchButton")
+const searchInput = document.getElementById("productSearch")
+const productListEl = document.getElementById("productList")
 
-const formEl = document.getElementById('productForm');
-const productIdInput = document.getElementById('productId');
-const nameInput = document.getElementById('productName');
-const salePriceInput = document.getElementById('productSalePrice');
-const categoryInput = document.getElementById('productCategory');
-const initialStockInput = document.getElementById('productInitialStock');
-const initialStockFieldEl = document.getElementById('initialStockField');
-const cancelEditButton = document.getElementById('cancelEditButton');
-const formMessageEl = document.getElementById('formMessage');
+const formEl = document.getElementById("productForm")
+const productIdInput = document.getElementById("productId")
+const nameInput = document.getElementById("productName")
+const salePriceInput = document.getElementById("productSalePrice")
+const categoryInput = document.getElementById("productCategory")
+const initialStockInput = document.getElementById("productInitialStock")
+const initialStockFieldEl = document.getElementById("initialStockField")
+const cancelEditButton = document.getElementById("cancelEditButton")
+const formMessageEl = document.getElementById("formMessage")
 
 // ---- Estado da tela em memória ----
 // "allProducts" guarda a lista completa, carregada do banco. O filtro de
 // busca trabalha em cima desse array (sem consultar o Supabase a cada
 // letra digitada).
-let allProducts = [];
+let allProducts = []
 
 // ---- Máscara do campo de estoque inicial ----
 //
@@ -51,97 +57,106 @@ let allProducts = [];
 // enforceIntegerString corta a parte decimal em vez de só remover o ponto
 // (evita que "12.5" vire "125" por engano) — ver comentário na própria
 // função, em js/utils/inputMasks.js.
-initialStockInput.addEventListener('input', () => {
-  initialStockInput.value = enforceIntegerString(initialStockInput.value);
-});
+initialStockInput.addEventListener("input", () => {
+  initialStockInput.value = enforceIntegerString(initialStockInput.value)
+})
 
 // ---- Mensagens para o usuário ----
 
 function showFormMessage(text, type) {
-  formMessageEl.textContent = text;
-  formMessageEl.className = type;
+  formMessageEl.textContent = text
+  formMessageEl.className = type
 }
 
 function clearFormMessage() {
-  formMessageEl.textContent = '';
-  formMessageEl.className = '';
+  formMessageEl.textContent = ""
+  formMessageEl.className = ""
 }
 
 // ---- Alternar entre as duas visões (lista <-> formulário) ----
 
 function showListView() {
-  listViewEl.hidden = false;
-  formViewEl.hidden = true;
+  listViewEl.hidden = false
+  formViewEl.hidden = true
 }
 
 function showFormView() {
-  listViewEl.hidden = true;
-  formViewEl.hidden = false;
+  listViewEl.hidden = true
+  formViewEl.hidden = false
   // Ao trocar de visão, a página pode estar rolada lá embaixo (ex: o
   // usuário clicou em "Editar" no fim de uma lista longa) — voltamos ao
   // topo para o formulário aparecer inteiro.
-  window.scrollTo(0, 0);
+  window.scrollTo(0, 0)
 }
 
-// Abre o formulário vazio, para cadastrar um produto novo
+// Abre o formulário vazio, para cadastrar um produto novo. É a visão
+// padrão da página — cadastrar é a ação mais comum aqui. "Cancelar" fica
+// escondido: não existe nada a cancelar num cadastro em branco, só faz
+// sentido quando se está editando.
 function enterCreateMode() {
-  formEl.reset();
-  productIdInput.value = '';
-  formTitleEl.textContent = 'Novo produto';
+  formEl.reset()
+  productIdInput.value = ""
+  formTitleEl.textContent = "Novo produto"
+  cancelEditButton.hidden = true
   // Ao criar, o campo de estoque inicial aparece — é o único momento em
   // que o formulário pode definir stock_quantity diretamente.
-  initialStockFieldEl.hidden = false;
-  clearFormMessage();
-  showFormView();
-  nameInput.focus();
+  initialStockFieldEl.hidden = false
+  clearFormMessage()
+  showFormView()
+  nameInput.focus()
 }
 
 // Abre o formulário preenchido com os dados de um produto existente
 function enterEditMode(product) {
-  productIdInput.value = product.id;
-  nameInput.value = product.name;
-  salePriceInput.value = product.sale_price;
-  categoryInput.value = product.category ?? '';
-  formTitleEl.textContent = 'Editar produto';
+  productIdInput.value = product.id
+  nameInput.value = product.name
+  salePriceInput.value = product.sale_price
+  categoryInput.value = product.category ?? ""
+  formTitleEl.textContent = "Editar produto"
+  cancelEditButton.hidden = false
 
   // Ao editar, escondemos o campo de estoque inicial — reposição de
   // estoque é feita separadamente, direto na lista (ver openRestockRow).
   // Isso evita que o usuário apague o estoque atual sem querer ao editar
   // só o nome ou o preço.
-  initialStockFieldEl.hidden = true;
+  initialStockFieldEl.hidden = true
 
-  clearFormMessage();
-  showFormView();
-  nameInput.focus();
+  clearFormMessage()
+  showFormView()
+  nameInput.focus()
 }
 
 // Fecha o formulário e volta para a lista (usado ao salvar e ao cancelar)
 function exitFormView() {
-  formEl.reset();
-  productIdInput.value = '';
-  showListView();
+  formEl.reset()
+  productIdInput.value = ""
+  showListView()
 }
 
-newProductButton.addEventListener('click', enterCreateMode);
+newProductButton.addEventListener("click", enterCreateMode)
 
-cancelEditButton.addEventListener('click', () => {
-  exitFormView();
-  clearFormMessage();
-});
+searchButton.addEventListener("click", () => {
+  showListView()
+})
+
+cancelEditButton.addEventListener("click", () => {
+  exitFormView()
+  clearFormMessage()
+})
 
 // ---- Carregar os produtos do banco ----
 
 async function loadProducts() {
-  const { data: products, error } = await listProducts();
+  const { data: products, error } = await listProducts()
 
   if (error) {
-    console.error(error);
-    showFormMessage('Não foi possível carregar os produtos.', 'error');
-    return;
+    console.error(error)
+    showFormMessage("Não foi possível carregar os produtos.", "error")
+    return
   }
 
-  allProducts = products;
-  renderProductList();
+  allProducts = products
+  renderProductList()
 }
 
 // ---- Filtro de busca ----
@@ -149,61 +164,61 @@ async function loadProducts() {
 // Devolve só os produtos que combinam com o que está digitado na busca.
 // Busca em nome e categoria (não faz sentido buscar por preço/estoque aqui).
 function getFilteredProducts() {
-  const rawTerm = searchInput.value.trim();
+  const rawTerm = searchInput.value.trim()
 
-  if (rawTerm === '') {
-    return allProducts;
+  if (rawTerm === "") {
+    return allProducts
   }
 
-  const term = normalizeText(rawTerm);
+  const term = normalizeText(rawTerm)
 
   return allProducts.filter((product) => {
-    const nameMatches = normalizeText(product.name).includes(term);
-    const categoryMatches = normalizeText(product.category ?? '').includes(term);
+    const nameMatches = normalizeText(product.name).includes(term)
+    const categoryMatches = normalizeText(product.category ?? "").includes(term)
 
-    return nameMatches || categoryMatches;
-  });
+    return nameMatches || categoryMatches
+  })
 }
 
 // A cada letra digitada, desenhamos a lista de novo já filtrada
-searchInput.addEventListener('input', renderProductList);
+searchInput.addEventListener("input", renderProductList)
 
 // ---- Desenhar a lista de produtos (cards) ----
 
 function renderProductList() {
   // Limpa a lista antes de desenhar de novo, para não duplicar itens
-  productListEl.innerHTML = '';
+  productListEl.innerHTML = ""
 
   // Estado vazio 1: nenhum produto cadastrado ainda
   if (allProducts.length === 0) {
-    const emptyItem = document.createElement('li');
-    emptyItem.className = 'emptyState';
+    const emptyItem = document.createElement("li")
+    emptyItem.className = "emptyState"
     emptyItem.textContent =
-      'Você ainda não cadastrou nenhum produto. Toque em "Novo produto" para cadastrar o primeiro.';
-    productListEl.appendChild(emptyItem);
-    return;
+      'Você ainda não cadastrou nenhum produto. Toque em "Novo produto" para cadastrar o primeiro.'
+    productListEl.appendChild(emptyItem)
+    return
   }
 
-  const products = getFilteredProducts();
+  const products = getFilteredProducts()
 
   // Estado vazio 2: existem produtos, mas nenhum combina com a busca
   if (products.length === 0) {
-    const emptyItem = document.createElement('li');
-    emptyItem.className = 'emptyState';
-    emptyItem.textContent = 'Nenhum produto encontrado para essa busca.';
-    productListEl.appendChild(emptyItem);
-    return;
+    const emptyItem = document.createElement("li")
+    emptyItem.className = "emptyState"
+    emptyItem.textContent = "Nenhum produto encontrado para essa busca."
+    productListEl.appendChild(emptyItem)
+    return
   }
 
   for (const product of products) {
-    const item = document.createElement('li');
-    item.className = 'recordItem';
+    const item = document.createElement("li")
+    item.className = "recordItem"
 
     // Categoria só aparece se existir — evita "undefined" ou uma linha
     // vazia em produtos sem categoria definida.
     const categoryHtml = product.category
       ? `<span class="recordDetail">${product.category}</span>`
-      : '';
+      : ""
 
     // Preço e estoque ficam na segunda coluna (equivalente ao "endereço"
     // no padrão de Clientes), cada um em sua própria linha — sem separador
@@ -221,30 +236,34 @@ function renderProductList() {
       </div>
       <div class="recordActions">
         <button type="button" class="rowActionButton" data-action="edit">
-          ${actionButtonContent(iconEdit, 'Editar')}
+          ${actionButtonContent(iconEdit, "Editar")}
         </button>
         <button type="button" class="rowActionButton" data-action="restock">
-          ${actionButtonContent(iconPlus, 'Estoque')}
+          ${actionButtonContent(iconPlus, "Estoque")}
         </button>
         <button type="button" class="rowActionButton danger" data-action="delete">
-          ${actionButtonContent(iconTrash, 'Excluir')}
+          ${actionButtonContent(iconTrash, "Excluir")}
         </button>
       </div>
-    `;
+    `
 
-    item.querySelector('[data-action="edit"]').addEventListener('click', () => {
-      enterEditMode(product);
-    });
+    item.querySelector('[data-action="edit"]').addEventListener("click", () => {
+      enterEditMode(product)
+    })
 
-    item.querySelector('[data-action="delete"]').addEventListener('click', () => {
-      handleDeleteProduct(product);
-    });
+    item
+      .querySelector('[data-action="delete"]')
+      .addEventListener("click", () => {
+        handleDeleteProduct(product)
+      })
 
-    item.querySelector('[data-action="restock"]').addEventListener('click', () => {
-      openRestockRow(product, item);
-    });
+    item
+      .querySelector('[data-action="restock"]')
+      .addEventListener("click", () => {
+        openRestockRow(product, item)
+      })
 
-    productListEl.appendChild(item);
+    productListEl.appendChild(item)
   }
 }
 
@@ -254,15 +273,15 @@ function openRestockRow(product, productItemEl) {
   // Antes de abrir uma nova, fecha qualquer linha de reposição que já
   // esteja aberta — evita ter dois formulários de reposição abertos ao
   // mesmo tempo, o que confundiria qual produto está sendo alterado.
-  closeAnyOpenRestockRow();
+  closeAnyOpenRestockRow()
 
   // Dois modos no mesmo formulário: "Adicionar produzido" (soma ao estoque
   // atual, é o comportamento original) e "Corrigir estoque atual"
   // (sobrescreve para o valor exato digitado — usado quando uma reposição
   // anterior foi registrada errada). O modo "add" começa marcado por
   // padrão, para não mudar o comportamento de quem já está acostumado.
-  const restockItem = document.createElement('li');
-  restockItem.className = 'restockRow';
+  const restockItem = document.createElement("li")
+  restockItem.className = "restockRow"
   restockItem.innerHTML = `
     <form class="restockForm">
       <div class="restockModeToggle">
@@ -282,79 +301,91 @@ function openRestockRow(product, productItemEl) {
       <button type="submit" class="confirmRestockButton">Confirmar</button>
       <button type="button" class="cancelRestockButton">Cancelar</button>
     </form>
-  `;
+  `
 
   // Insere o item de reposição logo depois do item do produto
-  productItemEl.after(restockItem);
+  productItemEl.after(restockItem)
 
-  const restockFormEl = restockItem.querySelector('.restockForm');
-  const modeRadios = restockItem.querySelectorAll('input[type="radio"]');
-  const labelEl = restockItem.querySelector(`#restockLabel-${product.id}`);
-  const amountInput = restockItem.querySelector('input[type="number"]');
-  const cancelButton = restockItem.querySelector('.cancelRestockButton');
+  const restockFormEl = restockItem.querySelector(".restockForm")
+  const modeRadios = restockItem.querySelectorAll('input[type="radio"]')
+  const labelEl = restockItem.querySelector(`#restockLabel-${product.id}`)
+  const amountInput = restockItem.querySelector('input[type="number"]')
+  const cancelButton = restockItem.querySelector(".cancelRestockButton")
 
-  amountInput.focus();
+  amountInput.focus()
 
   // Mesma máscara de número inteiro do estoque inicial — como este campo
   // é criado dinamicamente a cada clique em "Repor estoque", o listener
   // precisa ser registrado aqui dentro, e não junto dos outros no topo do
   // arquivo (o elemento ainda não existe até este ponto do código rodar).
-  amountInput.addEventListener('input', () => {
-    amountInput.value = enforceIntegerString(amountInput.value);
-  });
+  amountInput.addEventListener("input", () => {
+    amountInput.value = enforceIntegerString(amountInput.value)
+  })
 
   // Ao trocar de modo, o texto do campo e as regras mudam: "Adicionar"
   // pede uma quantidade produzida (mínimo 1, começa vazio); "Corrigir"
   // pede o novo valor total do estoque (pode ser 0, e já vem preenchido
   // com o estoque atual como ponto de partida, para o usuário só ajustar).
   for (const radio of modeRadios) {
-    radio.addEventListener('change', () => {
-      const isSetMode = restockFormEl.querySelector('input[type="radio"]:checked').value === 'set';
+    radio.addEventListener("change", () => {
+      const isSetMode =
+        restockFormEl.querySelector('input[type="radio"]:checked').value ===
+        "set"
 
       if (isSetMode) {
-        labelEl.textContent = `Corrigir estoque de "${product.name}" para:`;
-        amountInput.min = '0';
-        amountInput.value = product.stock_quantity;
+        labelEl.textContent = `Corrigir estoque de "${product.name}" para:`
+        amountInput.min = "0"
+        amountInput.value = product.stock_quantity
       } else {
-        labelEl.textContent = `Repor estoque de "${product.name}" — quantidade produzida:`;
-        amountInput.min = '1';
-        amountInput.value = '';
+        labelEl.textContent = `Repor estoque de "${product.name}" — quantidade produzida:`
+        amountInput.min = "1"
+        amountInput.value = ""
       }
 
-      amountInput.focus();
-    });
+      amountInput.focus()
+    })
   }
 
-  cancelButton.addEventListener('click', () => {
-    restockItem.remove();
-  });
+  cancelButton.addEventListener("click", () => {
+    restockItem.remove()
+  })
 
-  restockFormEl.addEventListener('submit', async (event) => {
-    event.preventDefault();
+  restockFormEl.addEventListener("submit", async (event) => {
+    event.preventDefault()
 
-    const mode = restockFormEl.querySelector('input[type="radio"]:checked').value;
-    const amount = Number(amountInput.value);
+    const mode = restockFormEl.querySelector(
+      'input[type="radio"]:checked',
+    ).value
+    const amount = Number(amountInput.value)
 
     // "add" soma ao estoque atual (increaseStock); "set" sobrescreve para
     // o valor exato digitado (setStock) — ver productService.js.
     const { error } =
-      mode === 'set' ? await setStock(product.id, amount) : await increaseStock(product.id, amount);
+      mode === "set"
+        ? await setStock(product.id, amount)
+        : await increaseStock(product.id, amount)
 
     if (error) {
-      console.error(error);
-      showFormMessage('Não foi possível atualizar o estoque deste produto.', 'error');
-      return;
+      console.error(error)
+      showFormMessage(
+        "Não foi possível atualizar o estoque deste produto.",
+        "error",
+      )
+      return
     }
 
-    showFormMessage(`Estoque de "${product.name}" atualizado com sucesso.`, 'success');
-    loadProducts();
-  });
+    showFormMessage(
+      `Estoque de "${product.name}" atualizado com sucesso.`,
+      "success",
+    )
+    loadProducts()
+  })
 }
 
 function closeAnyOpenRestockRow() {
-  const existingRow = productListEl.querySelector('.restockRow');
+  const existingRow = productListEl.querySelector(".restockRow")
   if (existingRow) {
-    existingRow.remove();
+    existingRow.remove()
   }
 }
 
@@ -363,32 +394,32 @@ function closeAnyOpenRestockRow() {
 async function handleDeleteProduct(product) {
   const confirmou = await showConfirmModal({
     message: `Excluir o produto "${product.name}"? Essa ação não pode ser desfeita.`,
-    confirmLabel: 'Excluir',
+    confirmLabel: "Excluir",
     danger: true,
-  });
+  })
 
   if (!confirmou) {
-    return;
+    return
   }
 
-  const { error } = await deleteProduct(product.id);
+  const { error } = await deleteProduct(product.id)
 
   if (error) {
-    console.error(error);
-    showFormMessage('Não foi possível excluir este produto.', 'error');
-    return;
+    console.error(error)
+    showFormMessage("Não foi possível excluir este produto.", "error")
+    return
   }
 
-  showFormMessage('Produto excluído com sucesso.', 'success');
-  loadProducts();
+  showFormMessage("Produto excluído com sucesso.", "success")
+  loadProducts()
 }
 
 // ---- Criar ou atualizar produto ----
 
-formEl.addEventListener('submit', async (event) => {
-  event.preventDefault();
+formEl.addEventListener("submit", async (event) => {
+  event.preventDefault()
 
-  const idEmEdicao = productIdInput.value;
+  const idEmEdicao = productIdInput.value
 
   if (idEmEdicao) {
     // Modo edição: só dados gerais, NUNCA stock_quantity
@@ -396,18 +427,21 @@ formEl.addEventListener('submit', async (event) => {
       name: nameInput.value.trim(),
       sale_price: Number(salePriceInput.value),
       category: categoryInput.value.trim(),
-    };
-
-    const { error } = await updateProduct(idEmEdicao, updatedFields);
-
-    if (error) {
-      console.error(error);
-      showFormMessage('Não foi possível salvar o produto. Tente novamente.', 'error');
-      return;
     }
 
-    exitFormView();
-    showFormMessage('Produto atualizado com sucesso.', 'success');
+    const { error } = await updateProduct(idEmEdicao, updatedFields)
+
+    if (error) {
+      console.error(error)
+      showFormMessage(
+        "Não foi possível salvar o produto. Tente novamente.",
+        "error",
+      )
+      return
+    }
+
+    exitFormView()
+    showFormMessage("Produto atualizado com sucesso.", "success")
   } else {
     // Modo criação: inclui o estoque inicial
     const newProduct = {
@@ -415,22 +449,30 @@ formEl.addEventListener('submit', async (event) => {
       sale_price: Number(salePriceInput.value),
       category: categoryInput.value.trim(),
       stock_quantity: Number(initialStockInput.value),
-    };
-
-    const { error } = await createProduct(newProduct);
-
-    if (error) {
-      console.error(error);
-      showFormMessage('Não foi possível salvar o produto. Tente novamente.', 'error');
-      return;
     }
 
-    exitFormView();
-    showFormMessage('Produto cadastrado com sucesso.', 'success');
+    const { error } = await createProduct(newProduct)
+
+    if (error) {
+      console.error(error)
+      showFormMessage(
+        "Não foi possível salvar o produto. Tente novamente.",
+        "error",
+      )
+      return
+    }
+
+    exitFormView()
+    showFormMessage("Produto cadastrado com sucesso.", "success")
   }
 
-  loadProducts();
-});
+  loadProducts()
+})
 
-// ---- Carrega a lista assim que a página abre ----
-loadProducts();
+// ---- Inicialização da página ----
+// O formulário já começa na visão padrão (ver HTML), mas ainda assim
+// chamamos enterCreateMode() para garantir que o título e o botão
+// "Cancelar" comecem no estado certo. A lista é carregada em segundo
+// plano, pronta pra quando o usuário clicar em "Buscar".
+enterCreateMode()
+loadProducts()

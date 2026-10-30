@@ -1,76 +1,93 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-br">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Clientes</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css" />
-</head>
-<body>
-  <div id="mainNav"></div>
-  <main>
-    <h1>Clientes</h1>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Clientes</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <div id="mainNav"></div>
+    <main>
+      <h1>Clientes</h1>
 
-    <!-- Mensagens de erro ou sucesso ficam FORA das duas visões, no topo:
+      <!-- Mensagens de erro ou sucesso ficam FORA das duas visões, no topo:
          assim aparecem tanto na lista (ex: "Cliente cadastrado com sucesso")
          quanto no formulário (ex: erro ao salvar). -->
-    <p id="formMessage"></p>
+      <p id="formMessage"></p>
 
-    <!-- ==== Visão 1: LISTA de clientes (é a que aparece ao abrir a página) ==== -->
-    <div id="listView">
-      <section>
-        <div class="listHeader">
-          <h2>Clientes cadastrados</h2>
-          <button type="button" id="newCustomerButton" class="primaryButton">Novo cliente</button>
-        </div>
-
-        <label for="customerSearch">Buscar cliente</label>
-        <input
-          type="search"
-          id="customerSearch"
-          placeholder="Nome, telefone ou endereço"
-          autocomplete="off"
-        />
-
-        <!-- Lista de clientes: cada cliente vira um <li> (bloco com as
-             informações empilhadas e os botões de ação sempre visíveis) -->
-        <ul id="customerList" class="recordList">
-          <!-- Os clientes serão inseridos aqui via JavaScript -->
-        </ul>
-      </section>
-    </div>
-
-    <!-- ==== Visão 2: FORMULÁRIO de cadastro/edição (começa escondida) ==== -->
-    <div id="formView" hidden>
-      <section>
-        <h2 id="formTitle">Novo cliente</h2>
-        <form id="customerForm">
-          <!-- Campo escondido: guarda o id do cliente quando estamos EDITANDO.
-               Quando está vazio, significa que é um cliente novo (criar, não editar). -->
-          <input type="hidden" id="customerId" name="customerId" />
-
-          <label for="customerName">Nome</label>
-          <input type="text" id="customerName" name="name" required />
-
-          <label for="customerPhone">Telefone</label>
-          <input type="text" id="customerPhone" name="phone" inputmode="tel" />
-
-          <label for="customerAddress">Endereço</label>
-          <input type="text" id="customerAddress" name="address" />
-
-          <div class="button-row">
-            <button type="submit">Salvar cliente</button>
-            <button type="button" id="cancelEditButton">Cancelar</button>
+      <!-- ==== Visão 1: FORMULÁRIO de cadastro/edição (é a que aparece ao abrir
+         a página — cadastrar um cliente novo é a ação mais comum aqui) ==== -->
+      <div id="formView">
+        <section>
+          <div class="listHeader">
+            <h2 id="formTitle">Novo cliente</h2>
+            <button type="button" id="searchButton" class="secondaryButton">
+              Buscar
+            </button>
           </div>
-        </form>
-      </section>
-    </div>
-  </main>
+          <form id="customerForm">
+            <!-- Campo escondido: guarda o id do cliente quando estamos EDITANDO.
+               Quando está vazio, significa que é um cliente novo (criar, não editar). -->
+            <input type="hidden" id="customerId" name="customerId" />
 
-  <script type="module" src="js/components/nav.js"></script>
-  <script type="module" src="js/pages/customers.js"></script>
-</body>
+            <label for="customerName">Nome</label>
+            <input type="text" id="customerName" name="name" required />
+
+            <label for="customerPhone">Telefone</label>
+            <input
+              type="text"
+              id="customerPhone"
+              name="phone"
+              inputmode="tel"
+            />
+
+            <label for="customerAddress">Endereço</label>
+            <input type="text" id="customerAddress" name="address" />
+
+            <div class="button-row">
+              <button type="submit">Salvar cliente</button>
+              <button type="button" id="cancelEditButton">Cancelar</button>
+            </div>
+          </form>
+        </section>
+      </div>
+
+      <!-- ==== Visão 2: LISTA de clientes (escondida por padrão — acessada
+         pelo botão "Buscar" acima) ==== -->
+      <div id="listView" hidden>
+        <section>
+          <div class="listHeader">
+            <h2>Clientes cadastrados</h2>
+            <button type="button" id="newCustomerButton" class="primaryButton">
+              Novo cliente
+            </button>
+          </div>
+
+          <label for="customerSearch">Buscar cliente</label>
+          <input
+            type="search"
+            id="customerSearch"
+            placeholder="Nome, telefone ou endereço"
+            autocomplete="off"
+          />
+
+          <!-- Lista de clientes: cada cliente vira um <li> (bloco com as
+             informações empilhadas e os botões de ação sempre visíveis) -->
+          <ul id="customerList" class="recordList">
+            <!-- Os clientes serão inseridos aqui via JavaScript -->
+          </ul>
+        </section>
+      </div>
+    </main>
+
+    <script type="module" src="js/components/nav.js"></script>
+    <script type="module" src="js/pages/customers.js"></script>
+  </body>
 </html>
