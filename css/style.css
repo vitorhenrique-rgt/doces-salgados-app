@@ -1349,6 +1349,15 @@ td .rowActionButton:disabled:hover,
     width: auto;
   }
 
+  /* Escopado só a .listHeader (botão "Buscar") — o botão de Pix também
+     usa .secondaryButton, mas vive dentro de .paymentForm e precisa
+     continuar ocupando a largura toda em qualquer tamanho de tela (ver
+     decisão da skill de lembretes sobre formulários com campos demais
+     pra caber numa linha só). */
+  .listHeader .secondaryButton {
+    width: auto;
+  }
+
   /* A partir daqui sobra espaço horizontal: o endereço passa a ficar ao
      lado do bloco nome+telefone (não embaixo), em vez de embaixo dele —
      mas nome e telefone continuam empilhados entre si (ver .recordPrimary

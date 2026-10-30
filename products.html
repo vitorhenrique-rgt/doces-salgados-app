@@ -1,83 +1,111 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-br">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Produtos</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css" />
-</head>
-<body>
-  <div id="mainNav"></div>
-  <main>
-    <h1>Produtos</h1>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Produtos</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <div id="mainNav"></div>
+    <main>
+      <h1>Produtos</h1>
 
-    <!-- Mensagens de erro ou sucesso ficam FORA das duas visões, no topo:
+      <!-- Mensagens de erro ou sucesso ficam FORA das duas visões, no topo:
          assim aparecem tanto na lista (ex: "Produto excluído com sucesso")
          quanto no formulário (ex: erro ao salvar) e na ação de repor estoque. -->
-    <p id="formMessage"></p>
+      <p id="formMessage"></p>
 
-    <!-- ==== Visão 1: LISTA de produtos (é a que aparece ao abrir a página) ==== -->
-    <div id="listView">
-      <section>
-        <div class="listHeader">
-          <h2>Produtos cadastrados</h2>
-          <button type="button" id="newProductButton" class="primaryButton">Novo produto</button>
-        </div>
+      <!-- ==== Visão 1: FORMULÁRIO de cadastro/edição (é a que aparece ao abrir
+         a página — cadastrar um produto novo é a ação mais comum aqui) ==== -->
+      <div id="formView">
+        <section>
+          <div class="listHeader">
+            <h2 id="formTitle">Novo produto</h2>
+            <button type="button" id="searchButton" class="secondaryButton">
+              Buscar
+            </button>
+          </div>
+          <form id="productForm">
+            <!-- Campo escondido: guarda o id do produto quando estamos EDITANDO. -->
+            <input type="hidden" id="productId" name="productId" />
 
-        <label for="productSearch">Buscar produto</label>
-        <input
-          type="search"
-          id="productSearch"
-          placeholder="Nome ou categoria"
-          autocomplete="off"
-        />
+            <label for="productName">Nome</label>
+            <input type="text" id="productName" name="name" required />
 
-        <!-- Lista de produtos: cada produto vira um <li> (bloco com as
-             informações empilhadas e os botões de ação sempre visíveis) -->
-        <ul id="productList" class="recordList">
-          <!-- Os produtos serão inseridos aqui via JavaScript -->
-        </ul>
-      </section>
-    </div>
+            <label for="productSalePrice">Preço de venda (R$)</label>
+            <input
+              type="number"
+              id="productSalePrice"
+              name="sale_price"
+              step="0.01"
+              min="0"
+              required
+            />
 
-    <!-- ==== Visão 2: FORMULÁRIO de cadastro/edição (começa escondida) ==== -->
-    <div id="formView" hidden>
-      <section>
-        <h2 id="formTitle">Novo produto</h2>
-        <form id="productForm">
-          <!-- Campo escondido: guarda o id do produto quando estamos EDITANDO. -->
-          <input type="hidden" id="productId" name="productId" />
+            <label for="productCategory">Categoria</label>
+            <input type="text" id="productCategory" name="category" />
 
-          <label for="productName">Nome</label>
-          <input type="text" id="productName" name="name" required />
-
-          <label for="productSalePrice">Preço de venda (R$)</label>
-          <input type="number" id="productSalePrice" name="sale_price" step="0.01" min="0" required />
-
-          <label for="productCategory">Categoria</label>
-          <input type="text" id="productCategory" name="category" />
-
-          <!-- O estoque inicial só é pedido ao CRIAR um produto novo.
+            <!-- O estoque inicial só é pedido ao CRIAR um produto novo.
                Ao editar, este campo fica escondido — reposição de estoque
                é feita por uma ação separada, direto na lista de produtos. -->
-          <div id="initialStockField">
-            <label for="productInitialStock">Estoque inicial (unidades prontas)</label>
-            <input type="number" id="productInitialStock" name="stock_quantity" step="1" min="0" value="0" />
+            <div id="initialStockField">
+              <label for="productInitialStock"
+                >Estoque inicial (unidades prontas)</label
+              >
+              <input
+                type="number"
+                id="productInitialStock"
+                name="stock_quantity"
+                step="1"
+                min="0"
+                value="0"
+              />
+            </div>
+
+            <div class="button-row">
+              <button type="submit">Salvar produto</button>
+              <button type="button" id="cancelEditButton">Cancelar</button>
+            </div>
+          </form>
+        </section>
+      </div>
+
+      <!-- ==== Visão 2: LISTA de produtos (escondida por padrão — acessada
+         pelo botão "Buscar" acima) ==== -->
+      <div id="listView" hidden>
+        <section>
+          <div class="listHeader">
+            <h2>Produtos cadastrados</h2>
+            <button type="button" id="newProductButton" class="primaryButton">
+              Novo produto
+            </button>
           </div>
 
-          <div class="button-row">
-            <button type="submit">Salvar produto</button>
-            <button type="button" id="cancelEditButton">Cancelar</button>
-          </div>
-        </form>
-      </section>
-    </div>
-  </main>
+          <label for="productSearch">Buscar produto</label>
+          <input
+            type="search"
+            id="productSearch"
+            placeholder="Nome ou categoria"
+            autocomplete="off"
+          />
 
-  <script type="module" src="js/components/nav.js"></script>
-  <script type="module" src="js/pages/products.js"></script>
-</body>
+          <!-- Lista de produtos: cada produto vira um <li> (bloco com as
+             informações empilhadas e os botões de ação sempre visíveis) -->
+          <ul id="productList" class="recordList">
+            <!-- Os produtos serão inseridos aqui via JavaScript -->
+          </ul>
+        </section>
+      </div>
+    </main>
+
+    <script type="module" src="js/components/nav.js"></script>
+    <script type="module" src="js/pages/products.js"></script>
+  </body>
 </html>
